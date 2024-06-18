@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32407.337
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "picomoq", "picomoq\picomoq.vcxproj", "{63EA7456-DE51-4ECC-AE01-308A9F2CA1AA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "picomoq_test", "picomoq_test\picomoq_test.vcxproj", "{A82ABD85-8538-42C6-8966-12820261EBF6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "picomoq_t", "picomoq_t\picomoq_t.vcxproj", "{FEF3815F-DABA-424B-9BA0-50D11E7AEA16}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{63EA7456-DE51-4ECC-AE01-308A9F2CA1AA}.Debug|x64.ActiveCfg = Debug|x64
+		{63EA7456-DE51-4ECC-AE01-308A9F2CA1AA}.Debug|x64.Build.0 = Debug|x64
+		{63EA7456-DE51-4ECC-AE01-308A9F2CA1AA}.Debug|x86.ActiveCfg = Debug|Win32
+		{63EA7456-DE51-4ECC-AE01-308A9F2CA1AA}.Debug|x86.Build.0 = Debug|Win32
+		{63EA7456-DE51-4ECC-AE01-308A9F2CA1AA}.Release|x64.ActiveCfg = Release|x64
+		{63EA7456-DE51-4ECC-AE01-308A9F2CA1AA}.Release|x64.Build.0 = Release|x64
+		{63EA7456-DE51-4ECC-AE01-308A9F2CA1AA}.Release|x86.ActiveCfg = Release|Win32
+		{63EA7456-DE51-4ECC-AE01-308A9F2CA1AA}.Release|x86.Build.0 = Release|Win32
+		{A82ABD85-8538-42C6-8966-12820261EBF6}.Debug|x64.ActiveCfg = Debug|x64
+		{A82ABD85-8538-42C6-8966-12820261EBF6}.Debug|x64.Build.0 = Debug|x64
+		{A82ABD85-8538-42C6-8966-12820261EBF6}.Debug|x86.ActiveCfg = Debug|Win32
+		{A82ABD85-8538-42C6-8966-12820261EBF6}.Debug|x86.Build.0 = Debug|Win32
+		{A82ABD85-8538-42C6-8966-12820261EBF6}.Release|x64.ActiveCfg = Release|x64
+		{A82ABD85-8538-42C6-8966-12820261EBF6}.Release|x64.Build.0 = Release|x64
+		{A82ABD85-8538-42C6-8966-12820261EBF6}.Release|x86.ActiveCfg = Release|Win32
+		{A82ABD85-8538-42C6-8966-12820261EBF6}.Release|x86.Build.0 = Release|Win32
+		{FEF3815F-DABA-424B-9BA0-50D11E7AEA16}.Debug|x64.ActiveCfg = Debug|x64
+		{FEF3815F-DABA-424B-9BA0-50D11E7AEA16}.Debug|x64.Build.0 = Debug|x64
+		{FEF3815F-DABA-424B-9BA0-50D11E7AEA16}.Debug|x86.ActiveCfg = Debug|Win32
+		{FEF3815F-DABA-424B-9BA0-50D11E7AEA16}.Debug|x86.Build.0 = Debug|Win32
+		{FEF3815F-DABA-424B-9BA0-50D11E7AEA16}.Release|x64.ActiveCfg = Release|x64
+		{FEF3815F-DABA-424B-9BA0-50D11E7AEA16}.Release|x64.Build.0 = Release|x64
+		{FEF3815F-DABA-424B-9BA0-50D11E7AEA16}.Release|x86.ActiveCfg = Release|Win32
+		{FEF3815F-DABA-424B-9BA0-50D11E7AEA16}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E388F724-F131-48EC-8E5F-F738F5CE87BA}
+	EndGlobalSection
+EndGlobal
