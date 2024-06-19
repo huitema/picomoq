@@ -3,6 +3,7 @@
 ################################################################################
 
 /visualc/.vs/picomoq/v16
-/visualc/picomoq/x64/Debug
-/visualc/picomoq_t/x64/Debug
-/visualc/picomoq_test/x64/Debug
+/visualc/picomoq/x64
+/visualc/picomoq_t/x64
+/visualc/picomoq_test/x64
+/visualc/x64

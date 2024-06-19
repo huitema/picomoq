@@ -641,8 +641,6 @@ const uint8_t* pmoq_msg_stream_object_header_parse(const uint8_t* bytes, const u
     return bytes;
 }
 
-
-
 uint8_t * pmoq_msg_keyed_format(uint8_t* bytes, const uint8_t* bytes_max, uint64_t msg_type, const pmoq_msg_t* msg)
 {
     switch (msg_type) {
