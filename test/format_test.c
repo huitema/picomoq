@@ -22,6 +22,217 @@ typedef struct st_pmoq_msg_format_test_case_t {
     unsigned int mode;
 } pmoq_msg_format_test_case_t;
 
+#define FORMAT_TEST_CASE_OK(msg_type, msg, ref) \
+    { msg_type, sizeof(msg), msg, (void*)&ref, pmoq_msg_test_mode_target }
+#define FORMAT_TEST_CASE_ALT(msg_type, msg, ref) \
+    { msg_type, sizeof(msg), msg, (void*)&ref, pmoq_msg_test_mode_alternate }
+#define FORMAT_TEST_CASE_ERR(msg_type, msg) \
+    { msg_type, sizeof(msg), msg, NULL, pmoq_msg_test_mode_error }
+
+/* Defining a set of message values used for testing */
+#if 0
+typedef struct st_pmoq_msg_object_stream_t {
+    uint64_t subscribe_id;
+    uint64_t track_alias;
+    uint64_t group_id;
+    uint64_t object_send_order;
+    uint64_t object_status;
+    /* Object Payload */
+} pmoq_msg_object_stream_t;
+
+typedef struct st_pmoq_subscribe_parameters_t {
+#define pmoq_para_auth_info_key 0x02
+    size_t auth_info_len;
+    uint8_t * auth_info;
+} pmoq_subscribe_parameters_t;
+
+typedef struct st_pmoq_msg_subscribe_t {
+    uint64_t subscribe_id;
+    uint64_t track_alias;
+    pmoq_bits_t track_namespace;
+    pmoq_bits_t track_name;
+#define pmoq_msg_filter_latest_group 0x1
+#define pmoq_msg_filter_latest_object 0x2
+#define pmoq_msg_filter_absolute_start 0x3
+#define pmoq_msg_filter_absolute_range 0x4
+#define pmoq_msg_filter_max 0x4
+    uint64_t filter_type;
+    unsigned int has_start : 1;
+    unsigned int has_end : 1;
+    uint64_t start_group;
+    uint64_t start_object;
+    uint64_t end_group;
+    uint64_t end_object;
+    pmoq_subscribe_parameters_t subscribe_parameters;
+} pmoq_msg_subscribe_t;
+
+typedef struct st_pmoq_msg_subscribe_update_t {
+    uint64_t subscribe_id;
+    uint64_t start_group;
+    uint64_t start_object;
+    uint64_t end_group;
+    uint64_t end_object;
+    pmoq_subscribe_parameters_t subscribe_parameters;
+} pmoq_msg_subscribe_update_t;
+
+typedef struct st_pmoq_msg_subscribe_ok_t {
+    uint64_t subscribe_id;
+    uint64_t expires;
+    uint8_t content_exists; /* value: 0 or 1 */
+    uint64_t largest_group_id; /* Only present if content_exists == 1 */
+    uint64_t largest_object_id; /* Only present if content_exists == 1 */
+} pmoq_msg_subscribe_ok_t;
+
+typedef struct st_pmoq_msg_subscribe_error_t {
+    uint64_t subscribe_id;
+    uint64_t error_code;
+    pmoq_bits_t reason_phrase;
+    uint64_t track_alias;
+} pmoq_msg_subscribe_error_t;
+
+typedef struct st_pmoq_msg_announce_t {
+    pmoq_bits_t track_namespace;
+    pmoq_subscribe_parameters_t announce_parameters;
+} pmoq_msg_announce_t;
+
+typedef struct st_pmoq_msg_track_namespace_t {
+    pmoq_bits_t track_namespace;
+} pmoq_msg_track_namespace_t;
+
+typedef struct st_pmoq_msg_announce_error_t {
+    pmoq_bits_t track_namespace;
+    uint64_t error_code;
+    pmoq_bits_t reason_phrase;
+} pmoq_msg_announce_error_t;
+
+typedef struct st_pmoq_msg_unsubscribe_t {
+    uint64_t subscribe_id;
+} pmoq_msg_unsubscribe_t;
+
+typedef struct st_pmoq_msg_subscribe_done_t {
+    uint64_t subscribe_id;
+    uint64_t status_code;
+    pmoq_bits_t reason_phrase;
+    uint8_t content_exists; /* value: 0 or 1 */
+    uint64_t final_group_id; /* Only present if content_exists == 1 */
+    uint64_t final_object_id; /* Only present if content_exists == 1 */
+} pmoq_msg_subscribe_done_t;
+
+typedef struct st_pmoq_msg_track_status_request_t {
+    pmoq_bits_t track_namespace;
+    pmoq_bits_t track_name;
+} pmoq_msg_track_status_request_t;
+
+typedef struct st_pmoq_msg_track_status_t {
+    pmoq_bits_t track_namespace;
+    pmoq_bits_t track_name;
+    uint64_t status_code;
+#define PMOQ_TRACK_STATUS_IN_PROGRESS 0x00
+#define PMOQ_TRACK_STATUS_DOES_NOT_EXISTS 0x01
+#define PMOQ_TRACK_STATUS_HAS_NOT_BEGUN 0x02
+#define PMOQ_TRACK_STATUS_IS_RELAY 0x03
+    uint64_t last_group_id; /* Only present if status code requires it */
+    uint64_t last_object_id; /* Only present if status code requires it */
+} pmoq_msg_track_status_t;
+
+typedef struct st_pmoq_msg_goaway_t {
+    pmoq_bits_t uri;
+} pmoq_msg_goaway_t;
+
+#define     pmoq_setup_role_undef 0
+#define     pmoq_setup_role_publisher 1
+#define     pmoq_setup_role_subscriber 2
+#define     pmoq_setup_role_pubsub 3
+#define     pmoq_setup_role_max 3
+#endif
+
+#define TEST_PATH 'p', 'a', 't', 'h'
+#define TEST_PATH_LEN 4
+uint8_t test_path[] = { TEST_PATH };
+
+#define test_param_role_p PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_publisher
+#define test_param_role_s PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_subscriber
+#define test_param_role_ps PMOQ_SETUP_PARAMETER_ROLE 1, pmoq_setup_role_pubsub
+#define test_param_role_bad PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_max + 1
+#define test_param_path4 PMOQ_SETUP_PARAMETER_PATH, TEST_PATH_LEN, TEST_PATH
+#define test_param_path0 PMOQ_SETUP_PARAMETER_PATH, 0
+#define test_param_grease0 0x60, 0x00, 0
+#define test_param_grease1 0x60, 0x01, TEST_PATH_LEN, TEST_PATH
+#define test_param_grease2 0x60, 0x02, 1, 1
+
+
+pmoq_msg_client_setup_t client_setup_1 = {
+    2,
+    { 1, 2 },
+    {
+        pmoq_setup_role_pubsub,
+        0,
+        NULL
+    }
+};
+
+uint8_t test_msg_client_setup_1[] = {
+    2, 1, 2,
+    2,
+    test_param_role_s,
+    test_param_path4
+};
+
+uint8_t test_msg_client_setup_1a[] = {
+    2, 1, 2,
+    5,
+    test_param_grease0,
+    test_param_grease1,
+    test_param_grease2,
+    test_param_path4,
+    test_param_role_s
+};
+
+uint8_t test_msg_client_setup_err1[] = {
+    2, 1, 2,
+    3,
+    test_param_role_s,
+    test_param_path4,
+    test_param_role_s
+};
+
+/* Table of test cases */
+pmoq_msg_format_test_case_t format_test_cases[] = {
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_1, client_setup_1),
+    FORMAT_TEST_CASE_ALT(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_1a, client_setup_1),
+    FORMAT_TEST_CASE_ERR(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_err1)
+};
+
+const size_t format_test_cases_nb = sizeof(format_test_cases) / sizeof(pmoq_msg_format_test_case_t);
+
+
+#if 0
+typedef struct st_pmoq_msg_server_setup_t {
+    uint32_t selected_version;
+    pmoq_setup_parameters_t setup_parameters;
+} pmoq_msg_server_setup_t;
+
+typedef struct st_pmoq_msg_stream_header_track_t {
+    uint64_t subscribe_id;
+    uint64_t track_alias;
+    uint64_t object_send_order;
+} pmoq_msg_stream_header_track_t;
+
+typedef struct st_pmoq_msg_stream_header_group_t {
+    uint64_t subscribe_id;
+    uint64_t track_alias;
+    uint64_t group_id;
+    uint64_t object_send_order;
+} pmoq_msg_stream_header_group_t;
+
+typedef struct st_pmoq_msg_stream_object_header_t {
+    uint64_t object_id;
+    uint64_t payload_length;
+    uint64_t object_status; /* Only present if object payload length = 0 */
+                            /* Object Payload */
+} pmoq_msg_stream_object_header_t;
+#endif
+
 /* Message comparator
 */
 
@@ -443,7 +654,19 @@ int pmoq_msg_format_test_parse_one(pmoq_msg_format_test_case_t* test)
     return ret;   
 }
 
-int pmoq_msg_format_test()
+int pmoq_msg_format_test_parse()
 {
-    return -1;
+    int ret = 0;
+
+    for (size_t i = 0; i < format_test_cases_nb; i++) {
+        if ((ret = pmoq_msg_format_test_parse_one(&format_test_cases[i])) != 0) {
+            printf("Parse test fails: format_test_cases[%zu]\n", i);
+        }
+        break;
+    }
+    if (ret == 0) {
+        printf("All parse tests succeed.\n");
+    }
+
+    return ret;
 }
