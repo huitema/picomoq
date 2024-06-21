@@ -250,7 +250,7 @@ int pmoq_bits_cmp(const pmoq_bits_t* bs, const pmoq_bits_t* bs_ref)
     }
     else if (bs->bits != NULL && bs_ref->bits != NULL) {
         if (bs->nb_bits != 0) {
-            ret = memcmp(bs->bits, bs_ref->bits, (bs->nb_bits + 7) / 8);
+            ret = memcmp(bs->bits, bs_ref->bits, (size_t)(bs->nb_bits + 7) / 8);
         }
     }
     else if (bs->bits == NULL && bs_ref->bits == NULL) {

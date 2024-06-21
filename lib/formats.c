@@ -53,7 +53,7 @@ uint8_t* pmoq_bits_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_b
             bytes = NULL;
         }
         else {
-            memcpy(bytes, bits_string->bits, nb_bytes);
+            memcpy(bytes, bits_string->bits, (size_t)nb_bytes);
             bytes += nb_bytes;
         }
     }
