@@ -24,7 +24,7 @@ jobs:
           ./ci/build_picotls.sh
           ./ci/build_picoquic.sh
      
-      # Build picodoq and run tests
+      # Build picomoq and run tests
       - run: |
           mkdir build
           cd build
@@ -32,7 +32,7 @@ jobs:
           cmake --build .
           make
           ulimit -c unlimited -S
-          ./picodoq_t -n -S ../../picoquic && QDRESULT=$? 
+          ./picomoq_t -n -S ../../picoquic && QDRESULT=$? 
           if [ ${QDRESULT} == 0 ]; then exit 0; fi;
           exit 1
 
