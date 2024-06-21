@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <picoquic.h>
 #include <picoquic_utils.h>
 #include "picomoq/picomoq_test.h"
