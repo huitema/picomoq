@@ -2,7 +2,7 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/visualc/.vs/picomoq/v16
+/visualc/.vs
 /visualc/picomoq/x64
 /visualc/picomoq_t/x64
 /visualc/picomoq_test/x64
