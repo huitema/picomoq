@@ -1,6 +1,6 @@
 #include <stdint.h>
-#include "picoquic/picoquic.h"
-#include "picoquic/picoquic_utils.h"
+#include <picoquic.h>
+#include <picoquic_utils.h>
 #include "picomoq.h"
 
 /* Testing the formats
@@ -148,7 +148,7 @@ typedef struct st_pmoq_msg_goaway_t {
 
 #define TEST_PATH 'p', 'a', 't', 'h'
 #define TEST_PATH_LEN 4
-uint8_t test_path[] = { TEST_PATH };
+static uint8_t test_path[] = { TEST_PATH };
 
 #define test_param_role_p PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_publisher
 #define test_param_role_s PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_subscriber
@@ -165,13 +165,14 @@ pmoq_msg_client_setup_t client_setup_1 = {
     2,
     { 1, 2 },
     {
-        pmoq_setup_role_pubsub,
-        0,
-        NULL
+        pmoq_setup_role_subscriber,
+        TEST_PATH_LEN,
+        test_path
     }
 };
 
 uint8_t test_msg_client_setup_1[] = {
+    0x40, PMOQ_MSG_CLIENT_SETUP,
     2, 1, 2,
     2,
     test_param_role_s,
@@ -179,6 +180,7 @@ uint8_t test_msg_client_setup_1[] = {
 };
 
 uint8_t test_msg_client_setup_1a[] = {
+    0x40, PMOQ_MSG_CLIENT_SETUP,
     2, 1, 2,
     5,
     test_param_grease0,
@@ -189,6 +191,7 @@ uint8_t test_msg_client_setup_1a[] = {
 };
 
 uint8_t test_msg_client_setup_err1[] = {
+    0x40, PMOQ_MSG_CLIENT_SETUP,
     2, 1, 2,
     3,
     test_param_role_s,
@@ -642,7 +645,7 @@ int pmoq_msg_format_test_parse_one(pmoq_msg_format_test_case_t* test)
 
     if (test->mode == pmoq_msg_test_mode_error) {
         if (bytes != NULL) {
-            ret = 0;
+            ret = -1;
         }
     }
     else if (bytes == NULL) {

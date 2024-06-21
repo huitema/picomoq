@@ -8,6 +8,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "picomoq_test", "picomoq_test\picomoq_test.vcxproj", "{A82ABD85-8538-42C6-8966-12820261EBF6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "picomoq_t", "picomoq_t\picomoq_t.vcxproj", "{FEF3815F-DABA-424B-9BA0-50D11E7AEA16}"
+	ProjectSection(ProjectDependencies) = postProject
+		{63EA7456-DE51-4ECC-AE01-308A9F2CA1AA} = {63EA7456-DE51-4ECC-AE01-308A9F2CA1AA}
+		{A82ABD85-8538-42C6-8966-12820261EBF6} = {A82ABD85-8538-42C6-8966-12820261EBF6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

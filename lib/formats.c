@@ -16,8 +16,8 @@
 * Question: do names have size limits?
 */
 #include <stdint.h>
-#include "picoquic/picoquic.h"
-#include "picoquic/picoquic_utils.h"
+#include <picoquic.h>
+#include <picoquic_utils.h>
 #include "picomoq.h"
 
 const uint8_t* pmoq_varint_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, uint64_t * v)
