@@ -16,6 +16,8 @@
 * Question: do names have size limits?
 */
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include <picoquic.h>
 #include <picoquic_utils.h>
 #include "picomoq.h"
@@ -565,7 +567,7 @@ const uint8_t* pmoq_msg_server_setup_parse(const uint8_t* bytes, const uint8_t* 
 {
     uint64_t v;
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &v)) != NULL) {
-        if (v > server_setup->selected_version > UINT32_MAX) {
+        if (v > UINT32_MAX) {
             bytes = NULL;
             *err = -1;
         }

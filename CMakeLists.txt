@@ -59,7 +59,7 @@ if(ENABLE_UBSAN)
 endif()
 
 set(PICOMOQ_LIBRARY_FILES
-    lib/format.c
+    lib/formats.c
 )
 
 set(PICOMOQ_TEST_LIBRARY_FILES
@@ -96,8 +96,7 @@ add_library(picomoq_test
 set(TEST_EXES picomoq_t)
 
 add_executable(picomoq_t
-    src/picomoq_t.c }
-)
+    test/picomoq_t.c )
 
 target_link_libraries(picomoq_t
     picomoq_test
