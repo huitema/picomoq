@@ -170,7 +170,7 @@ pmoq_msg_goaway_t goaway = {
     test_path
 };
 
-test_msg_goaway[] = {
+uint8_t test_msg_goaway[] = {
     PMOQ_MSG_GOAWAY,
     test_param_path4
 };
