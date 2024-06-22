@@ -7,6 +7,7 @@ extern "C" {
 #endif
 int pmoq_msg_format_test_parse();
 int pmoq_msg_format_test_format();
+int pmoq_msg_format_test_varlen();
 #ifdef __cplusplus
 }
 #endif
