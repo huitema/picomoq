@@ -166,8 +166,10 @@ static uint8_t test_path[] = { TEST_PATH };
 
 
 pmoq_msg_goaway_t goaway = {
-    TEST_PATH_LEN,
-    test_path
+    {
+        TEST_PATH_LEN,
+        test_path
+    }
 };
 
 uint8_t test_msg_goaway[] = {
