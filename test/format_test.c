@@ -679,7 +679,7 @@ int pmoq_msg_format_test_format_one(pmoq_msg_format_test_case_t* test)
     int err = 0;
     pmoq_msg_t msg = { 0 };
     uint8_t buf[2048];
-    const uint8_t* bytes = buf;
+    uint8_t* bytes = buf;
     const uint8_t* bytes_max = bytes + sizeof(msg);
 
     msg.msg_type = test->msg_type;
