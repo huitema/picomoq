@@ -676,11 +676,7 @@ int pmoq_msg_format_test_parse()
 int pmoq_msg_format_test_format_one(pmoq_msg_format_test_case_t* test)
 {
     int ret = 0;
-    int err = 0;
     pmoq_msg_t msg = { 0 };
-    uint8_t buf[2048];
-    uint8_t* bytes = buf;
-    const uint8_t* bytes_max = bytes + sizeof(msg);
 
     msg.msg_type = test->msg_type;
     switch (test->msg_type) {
@@ -767,6 +763,12 @@ int pmoq_msg_format_test_format_one(pmoq_msg_format_test_case_t* test)
     }
 
     if (ret == 0) {
+        uint8_t buf[2048];
+        uint8_t* bytes = buf;
+        const uint8_t* bytes_max = bytes + sizeof(msg);
+
+        memset(buf, 0xff, sizeof(buf));
+
         if ((bytes = pmoq_msg_format(bytes, bytes_max, &msg)) == NULL) {
             ret = 0;
         }
@@ -811,7 +813,7 @@ int pmoq_msg_format_test_varlen_one(pmoq_msg_format_test_case_t* test)
     for (size_t j = 0; ret == 0 && j < test->msg_len - 1; j++) {
         size_t test_len = j;
 
-        if (j < 64 && (mask & (1 << j)) != 0) {
+        if (j < 64 && (mask & (1ull << j)) != 0) {
             continue;
         }
 
@@ -820,7 +822,7 @@ int pmoq_msg_format_test_varlen_one(pmoq_msg_format_test_case_t* test)
             int err = 0;
 
             if (test_len < 64) {
-                mask |= (1 << test_len);
+                mask |= (1ull << test_len);
             }
 
             bytes = pmoq_msg_parse(test->msg, test->msg + test_len, &err, 0, &msg);
