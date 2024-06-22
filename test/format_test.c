@@ -182,7 +182,7 @@ uint8_t test_msg_client_setup_1[] = {
 };
 
 uint8_t test_msg_client_setup_1a[] = {
-    0x40, PMOQ_MSG_CLIENT_SETUP,
+    0x80, 0, 0, PMOQ_MSG_CLIENT_SETUP,
     2, 1, 2,
     5,
     test_param_grease0,
@@ -668,10 +668,6 @@ int pmoq_msg_format_test_parse()
             printf("Parse test fails: format_test_cases[%zu]\n", i);
             break;
         }
-        break;
-    }
-    if (ret == 0) {
-        printf("All parse tests succeed.\n");
     }
 
     return ret;
@@ -800,10 +796,76 @@ int pmoq_msg_format_test_format()
                 break;
             }
         }
-        break;
     }
-    if (ret == 0) {
-        printf("All %d format tests succeed.\n", nb_formatted);
+
+    return ret;
+}
+
+int pmoq_msg_format_test_varlen_one(pmoq_msg_format_test_case_t* test)
+{
+    int ret = 0;
+    const uint8_t* bytes = test->msg;
+    const uint8_t* msg_end = bytes + test->msg_len;
+    uint64_t mask = 0;
+
+    for (size_t j = 0; ret == 0 && j < test->msg_len - 1; j++) {
+        size_t test_len = j;
+
+        if (j < 64 && (mask & (1 << j)) != 0) {
+            continue;
+        }
+
+        while (ret == 0) {
+            pmoq_msg_t msg = { 0 };
+            int err = 0;
+
+            if (test_len < 64) {
+                mask |= (1 << test_len);
+            }
+
+            bytes = pmoq_msg_parse(test->msg, test->msg + test_len, &err, 0, &msg);
+
+            if (bytes == NULL) {
+                if (err > 0) {
+                    test_len += err;
+                    if (test_len > test->msg_len) {
+                        ret = -1;
+                    }
+                }
+                else if (err == 0) {
+                    ret = -1;
+                }
+                else if (test->mode != pmoq_msg_test_mode_error) {
+                    ret = -1;
+                }
+                else {
+                    break;
+                }
+            }
+            else if (bytes != msg_end) {
+                ret = -1;
+            }
+            else if (test->mode == pmoq_msg_test_mode_error) {
+                ret = -1;
+            }
+            else {
+                break;
+            }
+        }
+    }
+
+    return ret;   
+}
+
+int pmoq_msg_format_test_varlen()
+{
+    int ret = 0;
+
+    for (size_t i = 0; i < format_test_cases_nb; i++) {
+        if ((ret = pmoq_msg_format_test_varlen_one(&format_test_cases[i])) != 0) {
+            printf("Format varlen test fails: format_test_cases[%zu]\n", i);
+            break;
+        }
     }
 
     return ret;

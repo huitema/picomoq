@@ -115,7 +115,7 @@ const uint8_t* pmoq_msg_parameter_parse(const uint8_t* bytes, const uint8_t* byt
             *err = -1;
             bytes = NULL;
         } else if (bytes + (int)*l > bytes_max) {
-            *err = needed + (int)*l - (int)(bytes - bytes_max);
+            *err = needed + (int)*l - (int)(bytes_max - bytes);
             bytes = NULL;
         }
         else {
