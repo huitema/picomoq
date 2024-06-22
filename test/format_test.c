@@ -666,11 +666,144 @@ int pmoq_msg_format_test_parse()
     for (size_t i = 0; i < format_test_cases_nb; i++) {
         if ((ret = pmoq_msg_format_test_parse_one(&format_test_cases[i])) != 0) {
             printf("Parse test fails: format_test_cases[%zu]\n", i);
+            break;
         }
         break;
     }
     if (ret == 0) {
         printf("All parse tests succeed.\n");
+    }
+
+    return ret;
+}
+
+int pmoq_msg_format_test_format_one(pmoq_msg_format_test_case_t* test)
+{
+    int ret = 0;
+    int err = 0;
+    pmoq_msg_t msg = { 0 };
+    uint8_t buf[2048];
+    const uint8_t* bytes = buf;
+    const uint8_t* bytes_max = bytes + sizeof(msg);
+
+    msg.msg_type = test->msg_type;
+    switch (test->msg_type) {
+    case PMOQ_MSG_OBJECT_STREAM:
+        memcpy(&msg.msg_payload.object_stream,
+            test->payload_ref, sizeof(pmoq_msg_object_stream_t));
+        break;
+    case PMOQ_MSG_OBJECT_DATAGRAM:
+        memcpy(&msg.msg_payload.datagram,
+            test->payload_ref, sizeof(pmoq_msg_object_stream_t));
+        break;
+    case PMOQ_MSG_SUBSCRIBE:
+        memcpy(&msg.msg_payload.subscribe,
+            test->payload_ref, sizeof(pmoq_msg_subscribe_t));
+        break;
+    case PMOQ_MSG_SUBSCRIBE_OK:
+        memcpy(&msg.msg_payload.subscribe_ok,
+            test->payload_ref, sizeof(pmoq_msg_subscribe_ok_t));
+        break;
+    case PMOQ_MSG_SUBSCRIBE_ERROR:
+        memcpy(&msg.msg_payload.subscribe_error,
+            test->payload_ref, sizeof(pmoq_msg_subscribe_error_t));
+        break;
+    case PMOQ_MSG_ANNOUNCE:
+        memcpy(&msg.msg_payload.announce,
+            test->payload_ref, sizeof(pmoq_msg_announce_t));
+        break;
+    case PMOQ_MSG_ANNOUNCE_OK:
+        memcpy(&msg.msg_payload.announce_ok,
+            test->payload_ref, sizeof(pmoq_msg_track_namespace_t));
+        break;
+    case PMOQ_MSG_ANNOUNCE_ERROR:
+        memcpy(&msg.msg_payload.announce_error,
+            test->payload_ref, sizeof(pmoq_msg_announce_error_t));
+        break;
+    case PMOQ_MSG_UNANNOUNCE:
+        memcpy(&msg.msg_payload.unannounce,
+            test->payload_ref, sizeof(pmoq_msg_track_namespace_t));
+        break;
+    case PMOQ_MSG_UNSUBSCRIBE:
+        memcpy(&msg.msg_payload.unsubscribe,
+            test->payload_ref, sizeof(pmoq_msg_unsubscribe_t));
+        break;
+    case PMOQ_MSG_SUBSCRIBE_DONE:
+        memcpy(&msg.msg_payload.subscribe_done,
+            test->payload_ref, sizeof(pmoq_msg_subscribe_done_t));
+        break;
+    case PMOQ_MSG_ANNOUNCE_CANCEL:
+        memcpy(&msg.msg_payload.announce_cancel,
+            test->payload_ref, sizeof(pmoq_msg_track_namespace_t));
+        break;
+    case PMOQ_MSG_TRACK_STATUS_REQUEST:
+        memcpy(&msg.msg_payload.track_status_request,
+            test->payload_ref, sizeof(pmoq_msg_track_status_request_t));
+        break;
+    case PMOQ_MSG_TRACK_STATUS:
+        memcpy(&msg.msg_payload.track_status,
+            test->payload_ref, sizeof(pmoq_msg_track_status_t));
+        break;
+    case PMOQ_MSG_GOAWAY:
+        memcpy(&msg.msg_payload.goaway,
+            test->payload_ref, sizeof(pmoq_msg_goaway_t));
+        break;
+    case PMOQ_MSG_CLIENT_SETUP:
+        memcpy(&msg.msg_payload.client_setup,
+            test->payload_ref, sizeof(pmoq_msg_client_setup_t));
+        break;
+    case PMOQ_MSG_SERVER_SETUP:
+        memcpy(&msg.msg_payload.server_setup,
+            test->payload_ref, sizeof(pmoq_msg_server_setup_t));
+        break;
+    case PMOQ_MSG_STREAM_HEADER_TRACK:
+        memcpy(&msg.msg_payload.header_track,
+            test->payload_ref, sizeof(pmoq_msg_stream_header_track_t));
+        break;
+    case PMOQ_MSG_STREAM_HEADER_GROUP:
+        memcpy(&msg.msg_payload.header_group,
+            test->payload_ref, sizeof(pmoq_msg_stream_header_group_t));
+        break;
+    default:
+        /* Unexpected */
+        ret = -1;
+        break;
+    }
+
+    if (ret == 0) {
+        if ((bytes = pmoq_msg_format(bytes, bytes_max, &msg)) == NULL) {
+            ret = 0;
+        }
+        else {
+            size_t l = bytes - buf;
+
+            if (l != test->msg_len ||
+                memcmp(buf, test->msg, l) != 0) {
+                ret = -1;
+            }
+        }
+    }
+
+    return ret;
+}
+
+int pmoq_msg_format_test_format()
+{
+    int ret = 0;
+    int nb_formatted = 0;
+
+    for (size_t i = 0; i < format_test_cases_nb; i++) {
+        if (format_test_cases[i].mode == pmoq_msg_test_mode_target) {
+            nb_formatted++;
+            if ((ret = pmoq_msg_format_test_format_one(&format_test_cases[i])) != 0) {
+                printf("Format test fails: format_test_cases[%zu]\n", i);
+                break;
+            }
+        }
+        break;
+    }
+    if (ret == 0) {
+        printf("All %d format tests succeed.\n", nb_formatted);
     }
 
     return ret;

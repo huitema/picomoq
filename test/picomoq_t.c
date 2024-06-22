@@ -26,7 +26,8 @@ typedef enum {
 } test_status_t;
 
 static const picoquic_test_def_t test_table[] = {
-    { "format_parse", pmoq_msg_format_test_parse }
+    { "format_parse", pmoq_msg_format_test_parse },
+    { "format_format", pmoq_msg_format_test_format }
 };
 
 static size_t const nb_tests = sizeof(test_table) / sizeof(picoquic_test_def_t);
