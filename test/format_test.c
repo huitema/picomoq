@@ -154,7 +154,7 @@ static uint8_t test_path[] = { TEST_PATH };
 
 #define test_param_role_p PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_publisher
 #define test_param_role_s PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_subscriber
-#define test_param_role_ps PMOQ_SETUP_PARAMETER_ROLE 1, pmoq_setup_role_pubsub
+#define test_param_role_ps PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_pubsub
 #define test_param_role_bad PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_max + 1
 #define test_param_path4 PMOQ_SETUP_PARAMETER_PATH, TEST_PATH_LEN, TEST_PATH
 #define test_param_path0 PMOQ_SETUP_PARAMETER_PATH, 0
@@ -201,15 +201,71 @@ uint8_t test_msg_client_setup_err1[] = {
     test_param_role_s
 };
 
+pmoq_msg_server_setup_t server_setup_1 = {
+    0x1234567,
+    {
+        pmoq_setup_role_publisher,
+        0,
+        NULL
+    }
+};
+
+uint8_t test_msg_server_setup_1[] = {
+    0x40, PMOQ_MSG_SERVER_SETUP,
+    0x81, 0x23, 0x45, 0x67,
+    1,
+    test_param_role_p,
+};
+
+pmoq_msg_server_setup_t server_setup_2 = {
+    1,
+    {
+        pmoq_setup_role_pubsub,
+        0,
+        NULL
+    }
+};
+
+uint8_t test_msg_server_setup_2[] = {
+    0x40, PMOQ_MSG_SERVER_SETUP,
+    0x1,
+    1,
+    test_param_role_ps
+};
+
+uint8_t test_msg_server_setup_bad1[] = {
+    0x40, PMOQ_MSG_SERVER_SETUP,
+    0x1,
+    1,
+    test_param_role_bad
+};
+
+uint8_t test_msg_server_setup_bad2[] = {
+    0x40, PMOQ_MSG_SERVER_SETUP,
+    0xc1, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+    1,
+    test_param_role_ps
+};
+
+uint8_t test_msg_server_setup_bad3[] = {
+    0x40, PMOQ_MSG_SERVER_SETUP,
+    1,
+    0
+};
+
 /* Table of test cases */
 pmoq_msg_format_test_case_t format_test_cases[] = {
     FORMAT_TEST_CASE_OK(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_1, client_setup_1),
     FORMAT_TEST_CASE_ALT(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_1a, client_setup_1),
-    FORMAT_TEST_CASE_ERR(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_err1)
+    FORMAT_TEST_CASE_ERR(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_err1),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_1, server_setup_1),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_2, server_setup_2),
+    FORMAT_TEST_CASE_ERR(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_bad1),
+    FORMAT_TEST_CASE_ERR(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_bad2),
+    FORMAT_TEST_CASE_ERR(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_bad3),
 };
 
 const size_t format_test_cases_nb = sizeof(format_test_cases) / sizeof(pmoq_msg_format_test_case_t);
-
 
 #if 0
 typedef struct st_pmoq_msg_server_setup_t {
@@ -494,7 +550,7 @@ int pmoq_msg_server_setup_cmp(const pmoq_msg_server_setup_t* s, const pmoq_msg_s
     int ret = 0;
 
     if (s->selected_version != s_ref->selected_version ||
-        pmoq_msg_setup_parameters_cmp(&s->setup_parameters, &s_ref->setup_parameters) == 0) {
+        pmoq_msg_setup_parameters_cmp(&s->setup_parameters, &s_ref->setup_parameters) != 0) {
         ret = -1;
     }
     return ret;
