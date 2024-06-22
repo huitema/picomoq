@@ -266,8 +266,12 @@ const uint8_t* pmoq_msg_object_stream_parse(const uint8_t* bytes, const uint8_t*
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 4, &object_stream->subscribe_id)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 3, &object_stream->track_alias)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 2, &object_stream->group_id)) != NULL &&
-        (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &object_stream->object_send_order)) != NULL) {
-        bytes = pmoq_varint_parse(bytes, bytes_max, err, needed, &object_stream->object_status);
+        (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &object_stream->object_send_order)) != NULL &&
+        (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed, &object_stream->object_status)) != NULL){
+        if (object_stream->object_status > PMOQ_OBJECT_STATUS_MAX) {
+            *err = -1;
+            bytes = NULL;
+        }
     }
     return bytes;
 }

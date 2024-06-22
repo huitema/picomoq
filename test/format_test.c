@@ -148,6 +148,8 @@ typedef struct st_pmoq_msg_goaway_t {
 #define     pmoq_setup_role_max 3
 #endif
 
+
+
 #define TEST_PATH 'p', 'a', 't', 'h'
 #define TEST_PATH_LEN 4
 static uint8_t test_path[] = { TEST_PATH };
@@ -162,6 +164,16 @@ static uint8_t test_path[] = { TEST_PATH };
 #define test_param_grease1 0x60, 0x01, TEST_PATH_LEN, TEST_PATH
 #define test_param_grease2 0x60, 0x02, 1, 1
 
+
+pmoq_msg_goaway_t goaway = {
+    TEST_PATH_LEN,
+    test_path
+};
+
+test_msg_goaway[] = {
+    PMOQ_MSG_GOAWAY,
+    test_param_path4
+};
 
 pmoq_msg_client_setup_t client_setup_1 = {
     2,
@@ -253,6 +265,71 @@ uint8_t test_msg_server_setup_bad3[] = {
     0
 };
 
+pmoq_msg_stream_header_track_t stream_header_track = {
+    0x123,
+    0x31,
+    0
+};
+
+uint8_t test_msg_stream_header_track[] = {
+    0x40, PMOQ_MSG_STREAM_HEADER_TRACK,
+    0x41, 0x23,
+    0x31,
+    0
+};
+
+
+pmoq_msg_stream_header_group_t stream_header_group = {
+    0x12,
+    0x31,
+    0x0f,
+    0
+};
+
+uint8_t test_msg_stream_header_group[] = {
+    0x40, PMOQ_MSG_STREAM_HEADER_GROUP,
+    0x12,
+    0x31,
+    0x0f,
+    0
+};
+
+pmoq_msg_object_stream_t object_stream = {
+    0x12,
+    0x31,
+    0x0f,
+    0,
+    PMOQ_OBJECT_STATUS_NORMAL
+};
+
+uint8_t test_msg_object_stream[] = {
+    PMOQ_MSG_OBJECT_STREAM,
+    0x12,
+    0x31,
+    0x0f,
+    0,
+    PMOQ_OBJECT_STATUS_NORMAL
+};
+
+uint8_t test_msg_object_stream_bad[] = {
+    PMOQ_MSG_OBJECT_STREAM,
+    0x12,
+    0x31,
+    0x0f,
+    0,
+    PMOQ_OBJECT_STATUS_MAX + 1
+};
+
+#if 0
+/* To do: find a way to test the stream object header */
+typedef struct st_pmoq_msg_stream_object_header_t {
+    uint64_t object_id;
+    uint64_t payload_length;
+    uint64_t object_status; /* Only present if object payload length = 0 */
+                            /* Object Payload */
+} pmoq_msg_stream_object_header_t;
+#endif
+
 /* Table of test cases */
 pmoq_msg_format_test_case_t format_test_cases[] = {
     FORMAT_TEST_CASE_OK(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_1, client_setup_1),
@@ -263,36 +340,13 @@ pmoq_msg_format_test_case_t format_test_cases[] = {
     FORMAT_TEST_CASE_ERR(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_bad1),
     FORMAT_TEST_CASE_ERR(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_bad2),
     FORMAT_TEST_CASE_ERR(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_bad3),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_STREAM_HEADER_TRACK, test_msg_stream_header_track, stream_header_track),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_STREAM_HEADER_GROUP, test_msg_stream_header_group, stream_header_group),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_OBJECT_STREAM, test_msg_object_stream, object_stream),
+    FORMAT_TEST_CASE_ERR(PMOQ_MSG_OBJECT_STREAM, test_msg_object_stream_bad),
 };
 
 const size_t format_test_cases_nb = sizeof(format_test_cases) / sizeof(pmoq_msg_format_test_case_t);
-
-#if 0
-typedef struct st_pmoq_msg_server_setup_t {
-    uint32_t selected_version;
-    pmoq_setup_parameters_t setup_parameters;
-} pmoq_msg_server_setup_t;
-
-typedef struct st_pmoq_msg_stream_header_track_t {
-    uint64_t subscribe_id;
-    uint64_t track_alias;
-    uint64_t object_send_order;
-} pmoq_msg_stream_header_track_t;
-
-typedef struct st_pmoq_msg_stream_header_group_t {
-    uint64_t subscribe_id;
-    uint64_t track_alias;
-    uint64_t group_id;
-    uint64_t object_send_order;
-} pmoq_msg_stream_header_group_t;
-
-typedef struct st_pmoq_msg_stream_object_header_t {
-    uint64_t object_id;
-    uint64_t payload_length;
-    uint64_t object_status; /* Only present if object payload length = 0 */
-                            /* Object Payload */
-} pmoq_msg_stream_object_header_t;
-#endif
 
 /* Message comparator
 */
