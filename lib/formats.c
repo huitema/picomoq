@@ -144,6 +144,11 @@ const uint8_t* pmoq_msg_setup_parameters_parse(const uint8_t* bytes, const uint8
             *err = -1;
             bytes = NULL;
         }
+        else if (nb_params == 0) {
+            /* There must be at least one parameter, the role. */
+            *err = -1;
+            bytes = NULL;
+        }
         else {
             for (int i = 0; i < (int)nb_params; i++) {
                 uint64_t key;
@@ -566,7 +571,7 @@ uint8_t* pmoq_msg_server_setup_format(uint8_t* bytes, const uint8_t* bytes_max, 
 const uint8_t* pmoq_msg_server_setup_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_server_setup_t* server_setup)
 {
     uint64_t v;
-    if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &v)) != NULL) {
+    if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed+1, &v)) != NULL) {
         if (v > UINT32_MAX) {
             bytes = NULL;
             *err = -1;
