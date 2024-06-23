@@ -453,10 +453,10 @@ const uint8_t* pmoq_msg_subscribe_done_parse(const uint8_t* bytes, const uint8_t
             if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &subscribe_done->final_group_id)) != NULL) {
                 bytes = pmoq_varint_parse(bytes, bytes_max, err, needed, &subscribe_done->final_object_id);
             }
-            else if (subscribe_done->content_exists > 1) {
-                *err = -1;
-                bytes = NULL;
-            }
+        }
+        else if (subscribe_done->content_exists > 1) {
+            *err = -1;
+            bytes = NULL;
         }
     }
     return bytes;
@@ -499,10 +499,10 @@ const uint8_t* pmoq_msg_track_status_parse(const uint8_t* bytes, const uint8_t* 
             if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &track_status->last_group_id)) != NULL) {
                 bytes = pmoq_varint_parse(bytes, bytes_max, err, needed, &track_status->last_object_id);
             }
-            else if (track_status->status_code > PMOQ_TRACK_STATUS_IS_RELAY) {
-                *err = -1;
-                bytes = NULL;
-            }
+        }
+        else if (track_status->status_code > PMOQ_TRACK_STATUS_MAX) {
+            *err = -1;
+            bytes = NULL;
         }
     }
     return bytes;
