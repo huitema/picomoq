@@ -161,9 +161,10 @@ typedef struct st_pmoq_msg_track_status_t {
     pmoq_bits_t track_name;
     uint64_t status_code;
 #define PMOQ_TRACK_STATUS_IN_PROGRESS 0x00
-#define PMOQ_TRACK_STATUS_DOES_NOT_EXISTS 0x01
+#define PMOQ_TRACK_STATUS_DOES_NOT_EXIST 0x01
 #define PMOQ_TRACK_STATUS_HAS_NOT_BEGUN 0x02
 #define PMOQ_TRACK_STATUS_IS_RELAY 0x03
+#define PMOQ_TRACK_STATUS_MAX 0x03
     uint64_t last_group_id; /* Only present if status code requires it */
     uint64_t last_object_id; /* Only present if status code requires it */
 } pmoq_msg_track_status_t;

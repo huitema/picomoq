@@ -33,15 +33,6 @@ typedef struct st_pmoq_msg_format_test_case_t {
 
 /* Defining a set of message values used for testing */
 #if 0
-typedef struct st_pmoq_msg_object_stream_t {
-    uint64_t subscribe_id;
-    uint64_t track_alias;
-    uint64_t group_id;
-    uint64_t object_send_order;
-    uint64_t object_status;
-    /* Object Payload */
-} pmoq_msg_object_stream_t;
-
 typedef struct st_pmoq_subscribe_parameters_t {
 #define pmoq_para_auth_info_key 0x02
     size_t auth_info_len;
@@ -101,51 +92,6 @@ typedef struct st_pmoq_msg_track_namespace_t {
     pmoq_bits_t track_namespace;
 } pmoq_msg_track_namespace_t;
 
-typedef struct st_pmoq_msg_announce_error_t {
-    pmoq_bits_t track_namespace;
-    uint64_t error_code;
-    pmoq_bits_t reason_phrase;
-} pmoq_msg_announce_error_t;
-
-typedef struct st_pmoq_msg_unsubscribe_t {
-    uint64_t subscribe_id;
-} pmoq_msg_unsubscribe_t;
-
-typedef struct st_pmoq_msg_subscribe_done_t {
-    uint64_t subscribe_id;
-    uint64_t status_code;
-    pmoq_bits_t reason_phrase;
-    uint8_t content_exists; /* value: 0 or 1 */
-    uint64_t final_group_id; /* Only present if content_exists == 1 */
-    uint64_t final_object_id; /* Only present if content_exists == 1 */
-} pmoq_msg_subscribe_done_t;
-
-typedef struct st_pmoq_msg_track_status_request_t {
-    pmoq_bits_t track_namespace;
-    pmoq_bits_t track_name;
-} pmoq_msg_track_status_request_t;
-
-typedef struct st_pmoq_msg_track_status_t {
-    pmoq_bits_t track_namespace;
-    pmoq_bits_t track_name;
-    uint64_t status_code;
-#define PMOQ_TRACK_STATUS_IN_PROGRESS 0x00
-#define PMOQ_TRACK_STATUS_DOES_NOT_EXISTS 0x01
-#define PMOQ_TRACK_STATUS_HAS_NOT_BEGUN 0x02
-#define PMOQ_TRACK_STATUS_IS_RELAY 0x03
-    uint64_t last_group_id; /* Only present if status code requires it */
-    uint64_t last_object_id; /* Only present if status code requires it */
-} pmoq_msg_track_status_t;
-
-typedef struct st_pmoq_msg_goaway_t {
-    pmoq_bits_t uri;
-} pmoq_msg_goaway_t;
-
-#define     pmoq_setup_role_undef 0
-#define     pmoq_setup_role_publisher 1
-#define     pmoq_setup_role_subscriber 2
-#define     pmoq_setup_role_pubsub 3
-#define     pmoq_setup_role_max 3
 #endif
 
 
@@ -153,6 +99,14 @@ typedef struct st_pmoq_msg_goaway_t {
 #define TEST_PATH 'p', 'a', 't', 'h'
 #define TEST_PATH_LEN 4
 static uint8_t test_path[] = { TEST_PATH };
+
+#define TEST_TRACK_NAME 't', 'r', 'a', 'c', 'k'
+#define TEST_TRACK_NAME_LEN 5
+static uint8_t test_track_name[] = { TEST_TRACK_NAME };
+
+#define TEST_REASON 't', 'o', 'o', ' ', 'b', 'a', 'd'
+#define TEST_REASON_LEN 7
+static uint8_t test_reason[] = { TEST_REASON };
 
 #define test_param_role_p PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_publisher
 #define test_param_role_s PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_subscriber
@@ -164,17 +118,176 @@ static uint8_t test_path[] = { TEST_PATH };
 #define test_param_grease1 0x60, 0x01, TEST_PATH_LEN, TEST_PATH
 #define test_param_grease2 0x60, 0x02, 1, 1
 
+pmoq_msg_announce_error_t announce_error = {
+    {
+        TEST_PATH_LEN * 8,
+        test_path
+    },
+    0x0123,
+    {
+        TEST_REASON_LEN * 8,
+        test_reason
+    }
+};
 
+uint8_t test_msg_announce_error[] = {
+    PMOQ_MSG_ANNOUNCE_ERROR,
+    TEST_PATH_LEN * 8,
+    TEST_PATH,
+    0x41, 0x23,
+    TEST_REASON_LEN*8,
+    TEST_REASON
+};
+
+pmoq_msg_unsubscribe_t unsubscribe = {
+    61
+};
+
+uint8_t test_msg_unsubscribe[] = {
+    PMOQ_MSG_UNSUBSCRIBE,
+    61
+};
+
+pmoq_msg_subscribe_done_t subscribe_done = {
+    17,
+    PMOQ_TRACK_STATUS_IN_PROGRESS,
+    {
+        TEST_REASON_LEN*8,
+        test_reason
+    },
+    1,
+    31,
+    17
+};
+
+uint8_t test_msg_subscribe_done[] = {
+    PMOQ_MSG_SUBSCRIBE_DONE,
+    17,
+    PMOQ_TRACK_STATUS_IN_PROGRESS,
+    TEST_REASON_LEN*8,
+    TEST_REASON,
+    1,
+    31,
+    17
+};
+
+pmoq_msg_subscribe_done_t subscribe_done_0 = {
+    17,
+    PMOQ_TRACK_STATUS_IN_PROGRESS,
+    {
+        TEST_REASON_LEN*8,
+        test_reason
+    },
+    0
+};
+
+uint8_t test_msg_subscribe_done_0[] = {
+    PMOQ_MSG_SUBSCRIBE_DONE,
+    17,
+    PMOQ_TRACK_STATUS_IN_PROGRESS,
+    TEST_REASON_LEN*8,
+    TEST_REASON,
+    0
+};
+
+uint8_t test_msg_subscribe_done_bad[] = {
+    PMOQ_MSG_SUBSCRIBE_DONE,
+    17,
+    PMOQ_TRACK_STATUS_IN_PROGRESS,
+    TEST_REASON_LEN*8,
+    TEST_REASON,
+    0x4F, 0xFF,
+    31,
+    17
+};
+
+pmoq_msg_track_status_t track_status_request = {
+    {
+        TEST_PATH_LEN*8,
+        test_path
+    },
+    {
+        TEST_TRACK_NAME_LEN*8,
+        test_track_name
+    }
+};
+
+uint8_t test_msg_track_status_request[] = {
+    PMOQ_MSG_TRACK_STATUS_REQUEST,
+    TEST_PATH_LEN*8,
+    TEST_PATH,
+    TEST_TRACK_NAME_LEN*8,
+    TEST_TRACK_NAME
+};
+
+pmoq_msg_track_status_t track_status = {
+    {
+        TEST_PATH_LEN*8,
+        test_path
+    },
+    {
+        TEST_TRACK_NAME_LEN*8,
+        test_track_name
+    },
+    PMOQ_TRACK_STATUS_IN_PROGRESS,
+    31,
+    63
+};
+
+uint8_t test_msg_track_status[] = {
+    PMOQ_MSG_TRACK_STATUS,
+    TEST_PATH_LEN*8,
+    TEST_PATH,
+    TEST_TRACK_NAME_LEN*8,
+    TEST_TRACK_NAME,
+    PMOQ_TRACK_STATUS_IN_PROGRESS,
+    31,
+    63
+};
+
+
+pmoq_msg_track_status_t track_status_not = {
+    {
+        TEST_PATH_LEN*8,
+        test_path
+    },
+    {
+        TEST_TRACK_NAME_LEN*8,
+        test_track_name
+    },
+    PMOQ_TRACK_STATUS_DOES_NOT_EXIST,
+    0,
+    0
+};
+
+uint8_t test_msg_track_status_not[] = {
+    PMOQ_MSG_TRACK_STATUS,
+    TEST_PATH_LEN*8,
+    TEST_PATH,
+    TEST_TRACK_NAME_LEN*8,
+    TEST_TRACK_NAME,
+    PMOQ_TRACK_STATUS_DOES_NOT_EXIST
+};
+
+uint8_t test_msg_track_status_bad[] = {
+    PMOQ_MSG_TRACK_STATUS,
+    TEST_PATH_LEN*8,
+    TEST_PATH,
+    TEST_TRACK_NAME_LEN*8,
+    TEST_TRACK_NAME,
+    PMOQ_TRACK_STATUS_MAX+1
+};
 pmoq_msg_goaway_t goaway = {
     {
-        TEST_PATH_LEN,
+        TEST_PATH_LEN*8,
         test_path
     }
 };
 
 uint8_t test_msg_goaway[] = {
     PMOQ_MSG_GOAWAY,
-    test_param_path4
+    TEST_PATH_LEN*8,
+    TEST_PATH
 };
 
 pmoq_msg_client_setup_t client_setup_1 = {
@@ -334,6 +447,16 @@ typedef struct st_pmoq_msg_stream_object_header_t {
 
 /* Table of test cases */
 pmoq_msg_format_test_case_t format_test_cases[] = {
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE_ERROR, test_msg_announce_error, announce_error),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_UNSUBSCRIBE, test_msg_unsubscribe, unsubscribe),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_DONE, test_msg_subscribe_done, subscribe_done),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_DONE, test_msg_subscribe_done_0, subscribe_done_0),
+    FORMAT_TEST_CASE_ERR(PMOQ_MSG_SUBSCRIBE_DONE, test_msg_subscribe_done_bad),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_TRACK_STATUS_REQUEST, test_msg_track_status_request, track_status_request),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_TRACK_STATUS, test_msg_track_status, track_status),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_TRACK_STATUS, test_msg_track_status_not, track_status_not),
+    FORMAT_TEST_CASE_ERR(PMOQ_MSG_TRACK_STATUS, test_msg_track_status_bad),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_GOAWAY, test_msg_goaway, goaway),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_1, client_setup_1),
     FORMAT_TEST_CASE_ALT(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_1a, client_setup_1),
     FORMAT_TEST_CASE_ERR(PMOQ_MSG_CLIENT_SETUP, test_msg_client_setup_err1),
@@ -539,8 +662,8 @@ int pmoq_msg_subscribe_done_cmp(const pmoq_msg_subscribe_done_t * s, const pmoq_
         s->content_exists != s_ref->content_exists) {
         ret = -1;
     } else if (s->content_exists > 0) {
-        if (s->subscribe_id != s_ref->final_group_id ||
-            s->content_exists != s_ref->final_object_id) {
+        if (s->final_group_id != s_ref->final_group_id ||
+            s->final_object_id != s_ref->final_object_id) {
             ret = -1;
         }
     }
