@@ -40,18 +40,6 @@ typedef struct st_pmoq_msg_format_test_case_t {
     { msg_type, sizeof(msg), msg, NULL, 0, pmoq_msg_test_mode_error }
 
 /* Defining a set of message values used for testing */
-#if 0
-/* TODO: parser and test cases for subscribe update. */
-
-typedef struct st_pmoq_msg_subscribe_update_t {
-    uint64_t subscribe_id;
-    uint64_t start_group;
-    uint64_t start_object;
-    uint64_t end_group;
-    uint64_t end_object;
-    pmoq_subscribe_parameters_t subscribe_parameters;
-} pmoq_msg_subscribe_update_t;
-#endif
 
 #define TEST_PATH 'p', 'a', 't', 'h'
 #define TEST_PATH_LEN 4
@@ -155,6 +143,39 @@ uint8_t test_msg_subscribe_range[] = {
     1,
     test_param_auth
 };
+
+#if 0
+/* TODO: parser and test cases for subscribe update. */
+
+typedef struct st_pmoq_msg_subscribe_update_t {
+    uint64_t subscribe_id;
+    uint64_t start_group;
+    uint64_t start_object;
+    uint64_t end_group;
+    uint64_t end_object;
+    pmoq_subscribe_parameters_t subscribe_parameters;
+} pmoq_msg_subscribe_update_t;
+#endif
+format_test_val_t subscribe_update[] = {
+    FVAL(subscribe_id, 11),
+    FVAL(start_group, 0),
+    FVAL(start_object, 1),
+    FVAL(end_group, 31),
+    FVAL(end_object, 27),
+    FVAL(auth_info, auth)
+};
+
+uint8_t test_msg_subscribe_update[] = {
+    PMOQ_MSG_SUBSCRIBE_UPDATE,
+    11,
+    0,
+    1,
+    31,
+    27,
+    1,
+    test_param_auth
+};
+
 
 format_test_val_t subscribe_ok[] = {
     FVAL(subscribe_id, 65),
@@ -552,6 +573,7 @@ pmoq_msg_format_test_case_t format_test_cases[] = {
     FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE, test_msg_subscribe, subscribe),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE, test_msg_subscribe_start, subscribe_start),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE, test_msg_subscribe_range, subscribe_range),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_UPDATE, test_msg_subscribe_update, subscribe_update),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_OK, test_msg_subscribe_ok, subscribe_ok),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_OK, test_msg_subscribe_ok_empty, subscribe_ok_empty),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_ERROR, test_msg_subscribe_error, subscribe_error),
