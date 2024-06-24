@@ -13,11 +13,19 @@
 * - Whether the binary is the target encoding (0) , an alternate (1), or an error (2).
 */
 
+typedef struct st_format_test_val_t {
+    char* t_name;
+    char* t_val;
+} format_test_val_t;
+
+#define FVAL(x, y) { #x, #y }
+
 typedef struct st_pmoq_msg_format_test_case_t {
     uint64_t msg_type;
     size_t msg_len;
     uint8_t *msg;
-    void* payload_ref;
+    format_test_val_t* ref_val;
+    size_t ref_val_size;
 #define pmoq_msg_test_mode_target 0
 #define pmoq_msg_test_mode_alternate 1
 #define pmoq_msg_test_mode_error 2
@@ -25,39 +33,15 @@ typedef struct st_pmoq_msg_format_test_case_t {
 } pmoq_msg_format_test_case_t;
 
 #define FORMAT_TEST_CASE_OK(msg_type, msg, ref) \
-    { msg_type, sizeof(msg), msg, (void*)&ref, pmoq_msg_test_mode_target }
+    { msg_type, sizeof(msg), msg, ref, sizeof(ref), pmoq_msg_test_mode_target }
 #define FORMAT_TEST_CASE_ALT(msg_type, msg, ref) \
-    { msg_type, sizeof(msg), msg, (void*)&ref, pmoq_msg_test_mode_alternate }
+    { msg_type, sizeof(msg), msg, ref, sizeof(ref), pmoq_msg_test_mode_alternate }
 #define FORMAT_TEST_CASE_ERR(msg_type, msg) \
-    { msg_type, sizeof(msg), msg, NULL, pmoq_msg_test_mode_error }
+    { msg_type, sizeof(msg), msg, NULL, 0, pmoq_msg_test_mode_error }
 
 /* Defining a set of message values used for testing */
 #if 0
-typedef struct st_pmoq_subscribe_parameters_t {
-#define pmoq_para_auth_info_key 0x02
-    size_t auth_info_len;
-    uint8_t * auth_info;
-} pmoq_subscribe_parameters_t;
-
-typedef struct st_pmoq_msg_subscribe_t {
-    uint64_t subscribe_id;
-    uint64_t track_alias;
-    pmoq_bits_t track_namespace;
-    pmoq_bits_t track_name;
-#define pmoq_msg_filter_latest_group 0x1
-#define pmoq_msg_filter_latest_object 0x2
-#define pmoq_msg_filter_absolute_start 0x3
-#define pmoq_msg_filter_absolute_range 0x4
-#define pmoq_msg_filter_max 0x4
-    uint64_t filter_type;
-    unsigned int has_start : 1;
-    unsigned int has_end : 1;
-    uint64_t start_group;
-    uint64_t start_object;
-    uint64_t end_group;
-    uint64_t end_object;
-    pmoq_subscribe_parameters_t subscribe_parameters;
-} pmoq_msg_subscribe_t;
+/* TODO: parser and test cases for subscribe update. */
 
 typedef struct st_pmoq_msg_subscribe_update_t {
     uint64_t subscribe_id;
@@ -67,34 +51,7 @@ typedef struct st_pmoq_msg_subscribe_update_t {
     uint64_t end_object;
     pmoq_subscribe_parameters_t subscribe_parameters;
 } pmoq_msg_subscribe_update_t;
-
-typedef struct st_pmoq_msg_subscribe_ok_t {
-    uint64_t subscribe_id;
-    uint64_t expires;
-    uint8_t content_exists; /* value: 0 or 1 */
-    uint64_t largest_group_id; /* Only present if content_exists == 1 */
-    uint64_t largest_object_id; /* Only present if content_exists == 1 */
-} pmoq_msg_subscribe_ok_t;
-
-typedef struct st_pmoq_msg_subscribe_error_t {
-    uint64_t subscribe_id;
-    uint64_t error_code;
-    pmoq_bits_t reason_phrase;
-    uint64_t track_alias;
-} pmoq_msg_subscribe_error_t;
-
-typedef struct st_pmoq_msg_announce_t {
-    pmoq_bits_t track_namespace;
-    pmoq_subscribe_parameters_t announce_parameters;
-} pmoq_msg_announce_t;
-
-typedef struct st_pmoq_msg_track_namespace_t {
-    pmoq_bits_t track_namespace;
-} pmoq_msg_track_namespace_t;
-
 #endif
-
-
 
 #define TEST_PATH 'p', 'a', 't', 'h'
 #define TEST_PATH_LEN 4
@@ -108,6 +65,10 @@ static uint8_t test_track_name[] = { TEST_TRACK_NAME };
 #define TEST_REASON_LEN 7
 static uint8_t test_reason[] = { TEST_REASON };
 
+#define TEST_AUTH 'a', 'u', 't', 'h'
+#define TEST_AUTH_LEN 4
+static uint8_t test_auth[] = { TEST_AUTH };
+
 #define test_param_role_p PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_publisher
 #define test_param_role_s PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_subscriber
 #define test_param_role_ps PMOQ_SETUP_PARAMETER_ROLE, 1, pmoq_setup_role_pubsub
@@ -117,17 +78,199 @@ static uint8_t test_reason[] = { TEST_REASON };
 #define test_param_grease0 0x60, 0x00, 0
 #define test_param_grease1 0x60, 0x01, TEST_PATH_LEN, TEST_PATH
 #define test_param_grease2 0x60, 0x02, 1, 1
+#define test_param_auth PMOQ_PARAMETER_AUTHORIZATION_INFO, TEST_AUTH_LEN, TEST_AUTH
 
-pmoq_msg_announce_error_t announce_error = {
-    {
-        TEST_PATH_LEN * 8,
-        test_path
-    },
-    0x0123,
-    {
-        TEST_REASON_LEN * 8,
-        test_reason
-    }
+format_test_val_t subscribe[] = {
+    FVAL(subscribe_id, 31),
+    FVAL(track_alias, 17),
+    FVAL(track_namespace, path),
+    FVAL(track_name, track),
+    FVAL(filter_type, pmoq_msg_filter_latest_group),
+    FVAL(auth_info, auth)
+};
+
+uint8_t test_msg_subscribe[] = {
+    PMOQ_MSG_SUBSCRIBE,
+    31,
+    17,
+    TEST_PATH_LEN*8,
+    TEST_PATH,
+    TEST_TRACK_NAME_LEN*8,
+    TEST_TRACK_NAME,
+    pmoq_msg_filter_latest_group,
+    1,
+    test_param_auth
+};
+
+format_test_val_t subscribe_start[] = {
+    FVAL(subscribe_id, 31),
+    FVAL(track_alias, 17),
+    FVAL(track_namespace, path),
+    FVAL(track_name, track),
+    FVAL(filter_type, pmoq_msg_filter_absolute_start),
+    FVAL(start_group, 3),
+    FVAL(start_object, 14),
+    FVAL(auth_info, auth)
+};
+
+uint8_t test_msg_subscribe_start[] = {
+    PMOQ_MSG_SUBSCRIBE,
+    31,
+    17,
+    TEST_PATH_LEN*8,
+    TEST_PATH,
+    TEST_TRACK_NAME_LEN*8,
+    TEST_TRACK_NAME,
+    pmoq_msg_filter_absolute_start,
+    3,
+    14,
+    1,
+    test_param_auth
+};
+
+format_test_val_t subscribe_range[] = {
+    FVAL(subscribe_id, 31),
+    FVAL(track_alias, 17),
+    FVAL(track_namespace, path),
+    FVAL(track_name, track),
+    FVAL(filter_type, pmoq_msg_filter_absolute_range),
+    FVAL(end_group, 5),
+    FVAL(end_object, 35),
+    FVAL(auth_info, auth)
+};
+
+uint8_t test_msg_subscribe_range[] = {
+    PMOQ_MSG_SUBSCRIBE,
+    31,
+    17,
+    TEST_PATH_LEN*8,
+    TEST_PATH,
+    TEST_TRACK_NAME_LEN*8,
+    TEST_TRACK_NAME,
+    pmoq_msg_filter_absolute_range,
+    0,
+    0,
+    5,
+    35,
+    1,
+    test_param_auth
+};
+
+format_test_val_t subscribe_ok[] = {
+    FVAL(subscribe_id, 65),
+    FVAL(expires, 0),
+    FVAL(content_exists, 1),
+    FVAL(largest_group_id, 31),
+    FVAL(largest_object_id, 27)
+};
+
+uint8_t test_msg_subscribe_ok[] = {
+    PMOQ_MSG_SUBSCRIBE_OK,
+    0x40, 0x41,
+    0,
+    1,
+    31,
+    27
+};
+
+format_test_val_t subscribe_ok_empty[] = {
+    FVAL(subscribe_id, 65),
+    FVAL(expires, 0),
+    FVAL(content_exists, 0)
+};
+
+uint8_t test_msg_subscribe_ok_empty[] = {
+    PMOQ_MSG_SUBSCRIBE_OK,
+    0x40, 0x41,
+    0,
+    0
+};
+
+format_test_val_t subscribe_error[] = {
+    FVAL(subscribe_id, 17),
+    FVAL(error_code, PMOQ_SUBSCRIBE_ERROR_RETRY_TRACK_ALIAS),
+    FVAL(reason_phrase, reason),
+    FVAL(track_alias, 31)
+};
+
+uint8_t test_msg_subscribe_error[] = {
+    PMOQ_MSG_SUBSCRIBE_ERROR,
+    17,
+    PMOQ_SUBSCRIBE_ERROR_RETRY_TRACK_ALIAS,
+    TEST_REASON_LEN*8,
+    TEST_REASON,
+    31
+};
+
+format_test_val_t announce[] = {
+    FVAL(track_namespace, path),
+    FVAL(auth_info, auth)
+};
+
+uint8_t test_msg_announce_good[] = {
+    PMOQ_MSG_ANNOUNCE,
+    TEST_PATH_LEN * 8,
+    TEST_PATH,
+    1,
+    test_param_auth
+};
+
+uint8_t test_msg_announce_alt[] = {
+    PMOQ_MSG_ANNOUNCE,
+    TEST_PATH_LEN * 8,
+    TEST_PATH,
+    3,
+    test_param_grease0,
+    test_param_auth,
+    test_param_grease1
+};
+
+uint8_t test_msg_announce_bad[] = {
+    PMOQ_MSG_ANNOUNCE,
+    TEST_PATH_LEN * 8,
+    TEST_PATH,
+    2,
+    test_param_auth,
+    test_param_auth
+};
+
+format_test_val_t announce_zero[] = {
+    FVAL(track_namespace, path)
+};
+
+uint8_t test_msg_announce_zero[] = {
+    PMOQ_MSG_ANNOUNCE,
+    TEST_PATH_LEN * 8,
+    TEST_PATH,
+    0
+};
+
+format_test_val_t track_namespace[] = {
+    FVAL(track_namespace, path)
+};
+
+uint8_t test_msg_announce_ok[] = {
+    PMOQ_MSG_ANNOUNCE_OK,
+    TEST_PATH_LEN * 8,
+    TEST_PATH
+};
+
+uint8_t test_msg_unannounce[] = {
+    PMOQ_MSG_UNANNOUNCE,
+    TEST_PATH_LEN * 8,
+    TEST_PATH
+};
+
+uint8_t test_msg_announce_cancel[] = {
+    PMOQ_MSG_ANNOUNCE_CANCEL,
+    TEST_PATH_LEN * 8,
+    TEST_PATH
+};
+
+format_test_val_t announce_error[] = {
+    FVAL(track_namespace, path),
+    FVAL(error_code, 291),
+    FVAL(reason_phrase, reason)
 };
 
 uint8_t test_msg_announce_error[] = {
@@ -139,8 +282,8 @@ uint8_t test_msg_announce_error[] = {
     TEST_REASON
 };
 
-pmoq_msg_unsubscribe_t unsubscribe = {
-    61
+format_test_val_t unsubscribe[] = {
+    FVAL(subscribe_id, 61)
 };
 
 uint8_t test_msg_unsubscribe[] = {
@@ -148,16 +291,13 @@ uint8_t test_msg_unsubscribe[] = {
     61
 };
 
-pmoq_msg_subscribe_done_t subscribe_done = {
-    17,
-    PMOQ_TRACK_STATUS_IN_PROGRESS,
-    {
-        TEST_REASON_LEN*8,
-        test_reason
-    },
-    1,
-    31,
-    17
+format_test_val_t subscribe_done[] = {
+    FVAL(subscribe_id, 17),
+    FVAL(status_code, PMOQ_TRACK_STATUS_IN_PROGRESS),
+    FVAL(reason_phrase, reason),
+    FVAL(content_exists, 1),
+    FVAL(final_group_id, 31),
+    FVAL(final_object_id, 17)
 };
 
 uint8_t test_msg_subscribe_done[] = {
@@ -171,14 +311,11 @@ uint8_t test_msg_subscribe_done[] = {
     17
 };
 
-pmoq_msg_subscribe_done_t subscribe_done_0 = {
-    17,
-    PMOQ_TRACK_STATUS_IN_PROGRESS,
-    {
-        TEST_REASON_LEN*8,
-        test_reason
-    },
-    0
+format_test_val_t subscribe_done_0[] = {
+    FVAL(subscribe_id, 17),
+    FVAL(status_code, PMOQ_TRACK_STATUS_IN_PROGRESS),
+    FVAL(reason_phrase, reason),
+    FVAL(content_exists, 0),
 };
 
 uint8_t test_msg_subscribe_done_0[] = {
@@ -201,15 +338,9 @@ uint8_t test_msg_subscribe_done_bad[] = {
     17
 };
 
-pmoq_msg_track_status_t track_status_request = {
-    {
-        TEST_PATH_LEN*8,
-        test_path
-    },
-    {
-        TEST_TRACK_NAME_LEN*8,
-        test_track_name
-    }
+format_test_val_t track_status_request[] = {
+    FVAL(track_namespace, path),
+    FVAL(track_name, track)
 };
 
 uint8_t test_msg_track_status_request[] = {
@@ -220,18 +351,12 @@ uint8_t test_msg_track_status_request[] = {
     TEST_TRACK_NAME
 };
 
-pmoq_msg_track_status_t track_status = {
-    {
-        TEST_PATH_LEN*8,
-        test_path
-    },
-    {
-        TEST_TRACK_NAME_LEN*8,
-        test_track_name
-    },
-    PMOQ_TRACK_STATUS_IN_PROGRESS,
-    31,
-    63
+format_test_val_t track_status[] = {
+    FVAL(track_namespace, path),
+    FVAL(track_name, track),
+    FVAL(status_code, PMOQ_TRACK_STATUS_IN_PROGRESS),
+    FVAL(last_group_id, 31),
+    FVAL(last_object_id, 63)
 };
 
 uint8_t test_msg_track_status[] = {
@@ -245,19 +370,10 @@ uint8_t test_msg_track_status[] = {
     63
 };
 
-
-pmoq_msg_track_status_t track_status_not = {
-    {
-        TEST_PATH_LEN*8,
-        test_path
-    },
-    {
-        TEST_TRACK_NAME_LEN*8,
-        test_track_name
-    },
-    PMOQ_TRACK_STATUS_DOES_NOT_EXIST,
-    0,
-    0
+format_test_val_t track_status_not[] = {
+    FVAL(track_namespace, path),
+    FVAL(track_name, track),
+    FVAL(status_code, PMOQ_TRACK_STATUS_DOES_NOT_EXIST)
 };
 
 uint8_t test_msg_track_status_not[] = {
@@ -277,11 +393,9 @@ uint8_t test_msg_track_status_bad[] = {
     TEST_TRACK_NAME,
     PMOQ_TRACK_STATUS_MAX+1
 };
-pmoq_msg_goaway_t goaway = {
-    {
-        TEST_PATH_LEN*8,
-        test_path
-    }
+
+format_test_val_t goaway[] = {
+    FVAL(uri, path)
 };
 
 uint8_t test_msg_goaway[] = {
@@ -290,14 +404,10 @@ uint8_t test_msg_goaway[] = {
     TEST_PATH
 };
 
-pmoq_msg_client_setup_t client_setup_1 = {
-    2,
-    { 1, 2 },
-    {
-        pmoq_setup_role_subscriber,
-        TEST_PATH_LEN,
-        test_path
-    }
+format_test_val_t client_setup_1[] = {
+    FVAL(versions, 0),
+    FVAL(role, pmoq_setup_role_subscriber),
+    FVAL(path, path),
 };
 
 uint8_t test_msg_client_setup_1[] = {
@@ -328,13 +438,9 @@ uint8_t test_msg_client_setup_err1[] = {
     test_param_role_s
 };
 
-pmoq_msg_server_setup_t server_setup_1 = {
-    0x1234567,
-    {
-        pmoq_setup_role_publisher,
-        0,
-        NULL
-    }
+format_test_val_t server_setup_1[] = {
+    FVAL(selected_version, 19088743),
+    FVAL(role,pmoq_setup_role_publisher)
 };
 
 uint8_t test_msg_server_setup_1[] = {
@@ -344,13 +450,9 @@ uint8_t test_msg_server_setup_1[] = {
     test_param_role_p,
 };
 
-pmoq_msg_server_setup_t server_setup_2 = {
-    1,
-    {
-        pmoq_setup_role_pubsub,
-        0,
-        NULL
-    }
+format_test_val_t server_setup_2[] = {
+    FVAL(selected_version, 1),
+    FVAL(role, pmoq_setup_role_pubsub)
 };
 
 uint8_t test_msg_server_setup_2[] = {
@@ -380,10 +482,10 @@ uint8_t test_msg_server_setup_bad3[] = {
     0
 };
 
-pmoq_msg_stream_header_track_t stream_header_track = {
-    0x123,
-    0x31,
-    0
+format_test_val_t stream_header_track[] = {
+    FVAL(subscribe_id, 291),
+    FVAL(track_alias, 49),
+    FVAL(object_send_order, 0)
 };
 
 uint8_t test_msg_stream_header_track[] = {
@@ -393,12 +495,11 @@ uint8_t test_msg_stream_header_track[] = {
     0
 };
 
-
-pmoq_msg_stream_header_group_t stream_header_group = {
-    0x12,
-    0x31,
-    0x0f,
-    0
+format_test_val_t stream_header_group[] = {
+    FVAL(subscribe_id, 18),
+    FVAL(track_alias, 49),
+    FVAL(group_id, 15),
+    FVAL(object_send_order, 0)
 };
 
 uint8_t test_msg_stream_header_group[] = {
@@ -409,12 +510,12 @@ uint8_t test_msg_stream_header_group[] = {
     0
 };
 
-pmoq_msg_object_stream_t object_stream = {
-    0x12,
-    0x31,
-    0x0f,
-    0,
-    PMOQ_OBJECT_STATUS_NORMAL
+format_test_val_t object_stream[] = {
+    FVAL(subscribe_id, 18),
+    FVAL(track_alias, 49),
+    FVAL(group_id, 15),
+    FVAL(object_send_order, 0),
+    FVAL(object_status, PMOQ_OBJECT_STATUS_NORMAL)
 };
 
 uint8_t test_msg_object_stream[] = {
@@ -435,18 +536,32 @@ uint8_t test_msg_object_stream_bad[] = {
     PMOQ_OBJECT_STATUS_MAX + 1
 };
 
-#if 0
-/* To do: find a way to test the stream object header */
-typedef struct st_pmoq_msg_stream_object_header_t {
-    uint64_t object_id;
-    uint64_t payload_length;
-    uint64_t object_status; /* Only present if object payload length = 0 */
-                            /* Object Payload */
-} pmoq_msg_stream_object_header_t;
-#endif
+
+uint8_t test_msg_object_datagram[] = {
+    PMOQ_MSG_OBJECT_DATAGRAM,
+    0x12,
+    0x31,
+    0x0f,
+    0,
+    PMOQ_OBJECT_STATUS_NORMAL
+};
+
 
 /* Table of test cases */
 pmoq_msg_format_test_case_t format_test_cases[] = {
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE, test_msg_subscribe, subscribe),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE, test_msg_subscribe_start, subscribe_start),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE, test_msg_subscribe_range, subscribe_range),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_OK, test_msg_subscribe_ok, subscribe_ok),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_OK, test_msg_subscribe_ok_empty, subscribe_ok_empty),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_ERROR, test_msg_subscribe_error, subscribe_error),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE, test_msg_announce_good, announce),
+    FORMAT_TEST_CASE_ALT(PMOQ_MSG_ANNOUNCE, test_msg_announce_alt, announce),
+    FORMAT_TEST_CASE_ERR(PMOQ_MSG_ANNOUNCE, test_msg_announce_bad),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE, test_msg_announce_zero, announce_zero),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE_OK, test_msg_announce_ok, track_namespace),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_UNANNOUNCE, test_msg_unannounce, track_namespace),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE_CANCEL, test_msg_announce_cancel, track_namespace),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE_ERROR, test_msg_announce_error, announce_error),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_UNSUBSCRIBE, test_msg_unsubscribe, unsubscribe),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_DONE, test_msg_subscribe_done, subscribe_done),
@@ -469,6 +584,7 @@ pmoq_msg_format_test_case_t format_test_cases[] = {
     FORMAT_TEST_CASE_OK(PMOQ_MSG_STREAM_HEADER_GROUP, test_msg_stream_header_group, stream_header_group),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_OBJECT_STREAM, test_msg_object_stream, object_stream),
     FORMAT_TEST_CASE_ERR(PMOQ_MSG_OBJECT_STREAM, test_msg_object_stream_bad),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_OBJECT_DATAGRAM, test_msg_object_datagram, object_stream),
 };
 
 const size_t format_test_cases_nb = sizeof(format_test_cases) / sizeof(pmoq_msg_format_test_case_t);
@@ -539,334 +655,297 @@ int pmoq_subscribe_parameters_cmp(const pmoq_subscribe_parameters_t* param, cons
     return ret;
 }
 
-int pmoq_msg_object_stream_cmp(const pmoq_msg_object_stream_t* os, const pmoq_msg_object_stream_t* os_ref)
+int mpoq_test_msg_compare(const pmoq_msg_t* msg, const pmoq_msg_t* msg2)
 {
     int ret = 0;
-    if (os->subscribe_id != os_ref->subscribe_id ||
-        os->track_alias != os_ref->track_alias ||
-        os->group_id != os_ref->group_id ||
-        os->object_send_order != os_ref->object_send_order ||
-        os->object_status != os_ref->object_status) {
+    if (msg->msg_type != msg2->msg_type ||
+        pmoq_bits_cmp(&msg->track_namespace, &msg2->track_namespace) != 0 ||
+        pmoq_bits_cmp(&msg->track_name, &msg2->track_name) != 0 ||
+        msg->subscribe_id != msg2->subscribe_id ||
+        msg->track_alias != msg2->track_alias ||
+        msg->group_id != msg2->group_id ||
+        msg->object_send_order != msg2->object_send_order ||
+        msg->object_status != msg2->object_status ||
+        msg->filter_type != msg2->filter_type ||
+        msg->expires != msg2->expires ||
+        msg->content_exists != msg2->content_exists ||
+        msg->error_code != msg2->error_code ||
+        msg->status_code != msg2->status_code ||
+        msg->start_group != msg2->start_group ||
+        msg->start_object != msg2->start_object ||
+        msg->end_group != msg2->end_group ||
+        msg->largest_group_id != msg2->largest_group_id ||
+        msg->largest_object_id != msg2->largest_object_id ||
+        msg->last_group_id != msg2->last_group_id ||
+        msg->last_object_id != msg2->last_object_id ||
+        msg->final_group_id != msg2->final_group_id ||
+        msg->final_object_id != msg2->final_object_id ||
+        pmoq_bits_cmp(&msg->reason_phrase, &msg2->reason_phrase) != 0 ||
+        pmoq_bits_cmp(&msg->uri, &msg2->uri) != 0 ||
+        pmoq_subscribe_parameters_cmp(&msg->subscribe_parameters, &msg2->subscribe_parameters) != 0 ||
+        pmoq_msg_setup_parameters_cmp(&msg->setup_parameters, &msg2->setup_parameters) != 0 ||
+        msg->selected_version != msg2->selected_version ||
+        msg->supported_versions_nb != msg2->supported_versions_nb) {
         ret = -1;
-    }
-    return ret;
-}
-
-int pmoq_msg_subscribe_cmp(const pmoq_msg_subscribe_t * s, const pmoq_msg_subscribe_t * s_ref )
-{
-    int ret = 0;
-
-    if (s->subscribe_id != s_ref->subscribe_id || 
-        s->track_alias != s_ref->track_alias ||
-        pmoq_bits_cmp(&s->track_namespace, &s_ref->track_namespace) == 0 ||
-        pmoq_bits_cmp(&s->track_name, &s_ref->track_name) == 0 ||
-        s->filter_type != s_ref->filter_type ||
-        pmoq_subscribe_parameters_cmp(&s->subscribe_parameters, &s_ref->subscribe_parameters) != 0) {
-        ret = -1;
-    }
-    else if (s->filter_type == pmoq_msg_filter_absolute_start ||
-        s->filter_type == pmoq_msg_filter_absolute_range) {
-        if (s->start_group != s_ref->start_group ||
-            s->start_object != s_ref->start_object) {
-            ret = -1;
-        }
-        else if (s->filter_type == pmoq_msg_filter_absolute_range) {
-            if (s->start_group != s_ref->start_group ||
-                s->start_object != s_ref->start_object) {
-                ret = -1;
-            }
-        }
-    }
-    return ret;
-}
-
-int pmoq_msg_subscribe_ok_cmp(const pmoq_msg_subscribe_ok_t * s, const pmoq_msg_subscribe_ok_t * s_ref)
-{
-    int ret = 0;
-    if (s->subscribe_id != s_ref->subscribe_id ||
-        s->expires != s_ref->expires ||
-        s->content_exists != s_ref->content_exists) {
-        ret = -1;
-    }
-    else if (s->content_exists > 0) {
-        if (s->largest_group_id != s_ref->largest_group_id ||
-            s->largest_object_id != s_ref->largest_object_id) {
-            ret = -1;
-        }
-    }
-
-    return ret;
-}
-
-int pmoq_msg_subscribe_error_cmp(const pmoq_msg_subscribe_error_t * s, const pmoq_msg_subscribe_error_t * s_ref)
-{
-    int ret = 0;
-
-    if (s->subscribe_id != s_ref->subscribe_id ||
-        s->error_code != s_ref->error_code ||
-        pmoq_bits_cmp(&s->reason_phrase, &s_ref->reason_phrase) != 0 ||
-        s->track_alias != s_ref->track_alias) {
-        ret = -1;
-    }
-    return ret;
-}
-
-int pmoq_msg_announce_cmp(const pmoq_msg_announce_t * a, const pmoq_msg_announce_t * a_ref)
-{
-    int ret = 0;
-
-    if (pmoq_bits_cmp(&a->track_namespace, &a_ref->track_namespace) != 0 ||
-        pmoq_subscribe_parameters_cmp(&a->announce_parameters, &a_ref->announce_parameters) != 0 ) {
-        ret = -1;
-    }
-
-    return ret;
-}
-
-int pmoq_msg_track_namespace_cmp(const pmoq_msg_track_namespace_t * tns, const pmoq_msg_track_namespace_t * tns_ref)
-{
-    /* is there a size limit ? */
-    return pmoq_bits_cmp(&tns->track_namespace, &tns_ref->track_namespace);
-}
-
-int pmoq_msg_announce_error_cmp(const pmoq_msg_announce_error_t * a, const pmoq_msg_announce_error_t * a_ref)
-{
-    int ret = 0;
-
-    if (pmoq_bits_cmp(&a->track_namespace, &a_ref->track_namespace) != 0 ||
-        a->error_code != a_ref->error_code ||
-        pmoq_bits_cmp(&a->reason_phrase, &a_ref->reason_phrase) != 0) {
-        ret = -1;
-    }
-    return ret;
-}
-
-int pmoq_msg_unsubscribe_cmp(const pmoq_msg_unsubscribe_t* u, const pmoq_msg_unsubscribe_t* u_ref)
-{
-    int ret = 0;
-
-    if (u->subscribe_id != u_ref->subscribe_id) {
-        ret = -1;
-    }
-
-    return ret;
-}
-
-int pmoq_msg_subscribe_done_cmp(const pmoq_msg_subscribe_done_t * s, const pmoq_msg_subscribe_done_t * s_ref)
-{
-    int ret = 0;
-
-    if (s->subscribe_id != s_ref->subscribe_id ||
-        s->status_code != s_ref->status_code ||
-        pmoq_bits_cmp(&s->reason_phrase, &s_ref->reason_phrase) != 0 ||
-        s->content_exists != s_ref->content_exists) {
-        ret = -1;
-    } else if (s->content_exists > 0) {
-        if (s->final_group_id != s_ref->final_group_id ||
-            s->final_object_id != s_ref->final_object_id) {
-            ret = -1;
-        }
-    }
-    return ret;
-}
-
-int pmoq_msg_track_status_request_cmp(const pmoq_msg_track_status_request_t * ts, const pmoq_msg_track_status_request_t * ts_ref)
-{
-    int ret = 0;
-
-    if (pmoq_bits_cmp(&ts->track_namespace, &ts_ref->track_namespace) != 0 ||
-        pmoq_bits_cmp(&ts->track_name, &ts_ref->track_name) != 0) {
-        ret = -1;
-    }
-    return ret; 
-}
-
-int pmoq_msg_track_status_cmp(const pmoq_msg_track_status_t * ts, const pmoq_msg_track_status_t * ts_ref)
-{
-    int ret = 0;
-
-    if (pmoq_bits_cmp(&ts->track_namespace, &ts_ref->track_namespace) != 0 ||
-        pmoq_bits_cmp(&ts->track_name, &ts_ref->track_name) != 0 ||
-        ts->status_code != ts_ref->status_code) {
-        ret = -1;
-    }
-    else if (ts->status_code == PMOQ_TRACK_STATUS_IN_PROGRESS) {
-        if (ts->last_group_id != ts_ref->last_group_id ||
-            ts->last_object_id != ts_ref->last_object_id) {
-            ret = -1;
-        }
-    }
-    return ret;
-}
-
-int pmoq_msg_goaway_cmp(const pmoq_msg_goaway_t * g, const pmoq_msg_goaway_t * g_ref)
-{
-    return pmoq_bits_cmp(&g->uri, &g_ref->uri);
-}
-
-int pmoq_msg_client_setup_cmp(const pmoq_msg_client_setup_t * cs, const pmoq_msg_client_setup_t * cs_ref)
-{
-    int ret = 0;
-
-    if (cs->supported_versions_nb != cs_ref->supported_versions_nb ||
-        pmoq_msg_setup_parameters_cmp(&cs->setup_parameters, &cs_ref->setup_parameters) != 0) {
-        ret = -1;
-    }
-    else {
-        for (uint64_t i = 0; i < cs->supported_versions_nb; i++) {
-            if (cs->supported_versions[i] != cs_ref->supported_versions[i]) {
+    } else {
+        for (uint64_t i = 0; i < msg->supported_versions_nb; i++) {
+            if (msg->supported_versions[i] != msg2->supported_versions[i]) {
                 ret = -1;
                 break;
             }
         }
     }
-
     return ret;
 }
 
-int pmoq_msg_server_setup_cmp(const pmoq_msg_server_setup_t* s, const pmoq_msg_server_setup_t* s_ref)
+int pmoq_test_set_bits(pmoq_bits_t* v, char* val)
 {
     int ret = 0;
-
-    if (s->selected_version != s_ref->selected_version ||
-        pmoq_msg_setup_parameters_cmp(&s->setup_parameters, &s_ref->setup_parameters) != 0) {
-        ret = -1;
+    if (strcmp(val, "path") == 0) {
+        v->bits = test_path;
+        v->nb_bits = TEST_PATH_LEN * 8;
     }
-    return ret;
-}
-
-int pmoq_msg_stream_header_track_cmp(const pmoq_msg_stream_header_track_t * h, const pmoq_msg_stream_header_track_t * h_ref)
-{
-    int ret = 0;
-
-    if (h->subscribe_id != h_ref->subscribe_id ||
-        h->track_alias != h_ref->track_alias ||
-        h->object_send_order != h_ref->object_send_order){
-        ret = -1;
+    else if (strcmp(val, "track") == 0) {
+        v->bits = test_track_name;
+        v->nb_bits = TEST_TRACK_NAME_LEN * 8;
     }
-    return ret;
-}
-
-int pmoq_msg_stream_header_group_cmp(const pmoq_msg_stream_header_group_t * h, const pmoq_msg_stream_header_group_t * h_ref)
-{
-    int ret = 0;
-
-    if (h->subscribe_id != h_ref->subscribe_id ||
-        h->track_alias != h_ref->track_alias ||
-        h->group_id != h_ref->group_id ||
-        h->object_send_order != h_ref->object_send_order){
-        ret = -1;
-    }
-    return ret;
-}
-
-int pmoq_msg_stream_object_header_cmp(const pmoq_msg_stream_object_header_t * o, const pmoq_msg_stream_object_header_t * o_ref)
-{ 
-    int ret = 0;
-
-    if (o->object_id != o_ref->object_id ||
-        o->payload_length != o_ref->payload_length) {
-        ret = -1;
-    }
-    else if (o->payload_length == 0) {
-        if (o->object_status != o_ref->object_status) {
-            ret = -1;
-        }
-    }
-    return ret;
-}
-
-int mpoq_test_msg_compare(pmoq_msg_format_test_case_t* test, const pmoq_msg_t* msg)
-{
-    int ret = 0;
-
-    if (msg->msg_type != test->msg_type) {
-        ret = -1;
+    else if (strcmp(val, "reason") == 0) {
+        v->bits = test_reason;
+        v->nb_bits = TEST_REASON_LEN * 8;
     }
     else {
-        switch (test->msg_type) {
-        case PMOQ_MSG_OBJECT_STREAM:
-            ret = pmoq_msg_object_stream_cmp(&msg->msg_payload.object_stream,
-                (pmoq_msg_object_stream_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_OBJECT_DATAGRAM:
-            ret = pmoq_msg_object_stream_cmp(&msg->msg_payload.datagram,
-                (pmoq_msg_object_stream_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_SUBSCRIBE:
-            ret = pmoq_msg_subscribe_cmp(&msg->msg_payload.subscribe,
-                (pmoq_msg_subscribe_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_SUBSCRIBE_OK:
-            ret = pmoq_msg_subscribe_ok_cmp(&msg->msg_payload.subscribe_ok,
-                (pmoq_msg_subscribe_ok_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_SUBSCRIBE_ERROR:
-            ret = pmoq_msg_subscribe_error_cmp(&msg->msg_payload.subscribe_error,
-                (pmoq_msg_subscribe_error_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_ANNOUNCE:
-            ret = pmoq_msg_announce_cmp(&msg->msg_payload.announce,
-                (pmoq_msg_announce_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_ANNOUNCE_OK:
-            ret = pmoq_msg_track_namespace_cmp(&msg->msg_payload.announce_ok,
-                (pmoq_msg_track_namespace_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_ANNOUNCE_ERROR:
-            ret = pmoq_msg_announce_error_cmp(&msg->msg_payload.announce_error,
-                (pmoq_msg_announce_error_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_UNANNOUNCE:
-            ret = pmoq_msg_track_namespace_cmp(&msg->msg_payload.unannounce,
-                (pmoq_msg_track_namespace_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_UNSUBSCRIBE:
-            ret = pmoq_msg_unsubscribe_cmp(&msg->msg_payload.unsubscribe,
-                (pmoq_msg_unsubscribe_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_SUBSCRIBE_DONE:
-            ret = pmoq_msg_subscribe_done_cmp(&msg->msg_payload.subscribe_done,
-                (pmoq_msg_subscribe_done_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_ANNOUNCE_CANCEL:
-            ret = pmoq_msg_track_namespace_cmp(&msg->msg_payload.announce_cancel,
-                (pmoq_msg_track_namespace_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_TRACK_STATUS_REQUEST:
-            ret = pmoq_msg_track_status_request_cmp(&msg->msg_payload.track_status_request,
-                (pmoq_msg_track_status_request_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_TRACK_STATUS:
-            ret = pmoq_msg_track_status_cmp(&msg->msg_payload.track_status,
-                (pmoq_msg_track_status_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_GOAWAY:
-            ret = pmoq_msg_goaway_cmp(&msg->msg_payload.goaway,
-                (pmoq_msg_goaway_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_CLIENT_SETUP:
-            ret = pmoq_msg_client_setup_cmp(&msg->msg_payload.client_setup,
-                (pmoq_msg_client_setup_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_SERVER_SETUP:
-            ret = pmoq_msg_server_setup_cmp(&msg->msg_payload.server_setup,
-                (pmoq_msg_server_setup_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_STREAM_HEADER_TRACK:
-            ret = pmoq_msg_stream_header_track_cmp(&msg->msg_payload.header_track,
-                (pmoq_msg_stream_header_track_t*)test->payload_ref);
-            break;
-        case PMOQ_MSG_STREAM_HEADER_GROUP:
-            ret = pmoq_msg_stream_header_group_cmp(&msg->msg_payload.header_group,
-                (pmoq_msg_stream_header_group_t*)test->payload_ref);
-            break;
-        default:
-            /* Unexpected */
+        ret = -1;
+    }
+    return ret;
+}
+
+typedef struct st_pmoq_test_named_int_t {
+    char* name;
+    uint64_t v;
+} pmoq_test_named_int_t;
+
+#define TINT(x) { #x, x }
+
+pmoq_test_named_int_t test_named_int[] = {
+    TINT(PMOQ_OBJECT_STATUS_NORMAL),
+    TINT(PMOQ_OBJECT_STATUS_DOES_NOT_EXIST),
+    TINT(PMOQ_OBJECT_STATUS_NO_SUCH_GROUP),
+    TINT(PMOQ_OBJECT_STATUS_END_OF_GROUP),
+    TINT(PMOQ_OBJECT_STATUS_END_OF_GROUP_AND_TRACK),
+    TINT(PMOQ_TRACK_STATUS_IN_PROGRESS),
+    TINT(PMOQ_TRACK_STATUS_DOES_NOT_EXIST),
+    TINT(PMOQ_TRACK_STATUS_HAS_NOT_BEGUN),
+    TINT(PMOQ_TRACK_STATUS_IS_RELAY),
+    TINT(pmoq_msg_filter_latest_group),
+    TINT(pmoq_msg_filter_latest_object),
+    TINT(pmoq_msg_filter_absolute_start),
+    TINT(pmoq_msg_filter_absolute_range),
+    TINT(pmoq_setup_role_publisher),
+    TINT(pmoq_setup_role_subscriber),
+    TINT(pmoq_setup_role_pubsub),
+    TINT(PMOQ_SUBSCRIBE_ERROR_RETRY_INTERNAL_ERROR),
+    TINT(PMOQ_SUBSCRIBE_ERROR_RETRY_INVALID_RANGE),
+    TINT(PMOQ_SUBSCRIBE_ERROR_RETRY_TRACK_ALIAS),
+};
+
+size_t test_named_int_nb = sizeof(test_named_int) / sizeof(pmoq_test_named_int_t);
+
+int pmoq_test_set_u64(uint64_t * v, char* val)
+{
+    int ret = 0;
+
+    if (val[0] >= '0' && val[0] <= '9') {
+        uint64_t r = val[0] - '0';
+        uint8_t* x = (uint8_t*)(val + 1);
+        while (*x != 0 && ret == 0) {
+            r *= 10;
+            r += *x - '0';
+            x++;
+        }
+        if (*x != 0) {
             ret = -1;
-            break;
+        }
+        else {
+            *v = r;
         }
     }
+    else {
+        int found = 0;
+        for (size_t i = 0; i < test_named_int_nb; i++) {
+            if (strcmp(val, test_named_int[i].name) == 0) {
+                *v = test_named_int[i].v;
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            ret = -1;
+        }
+    }
+    return ret;
+}
+
+int pmoq_test_set_u32(uint32_t* v, char* val)
+{
+    uint64_t v64;
+    int ret = pmoq_test_set_u64(&v64, val);
+
+    if (ret == 0) {
+        if (v64 > UINT32_MAX) {
+            ret = -1;
+        }
+        else {
+            *v = (uint32_t)v64;
+        }
+    }
+    return ret;
+}
+
+int pmoq_test_set_u8(uint8_t * role, char* val)
+{
+    uint64_t v64;
+    int ret = pmoq_test_set_u64(&v64, val);
+
+    if (ret == 0) {
+        if (v64 > UINT8_MAX) {
+            ret = -1;
+        }
+        else {
+            *role = (uint8_t)v64;
+        }
+    }
+    return ret;
+}
+
+int pmoq_test_set_versions(pmoq_msg_t *msg)
+{
+    msg->supported_versions_nb = 2;
+    msg->supported_versions[0] = 1;
+    msg->supported_versions[1] = 2;
+    return 0;
+}
+
+int pmoq_test_set_string(uint8_t** v, size_t * l, char* val)
+{
+    int ret = 0;
+    if (strcmp(val, "path") == 0) {
+        *v = test_path;
+        *l = TEST_PATH_LEN;
+    }
+    else if (strcmp(val, "auth") == 0) {
+        *v = test_auth;
+        *l = TEST_AUTH_LEN;
+    }
+    else {
+        ret = -1;
+    }
+    return ret;
+}
+
+int pmoq_test_set_msg_from_test(pmoq_msg_t *msg, pmoq_msg_format_test_case_t* test)
+{
+    int ret = 0;
+    size_t nb_vals = test->ref_val_size / sizeof(format_test_val_t);
+
+    msg->msg_type = test->msg_type;
+
+    for (size_t i = 0; ret == 0 &&  i < nb_vals; i++) {
+        if (strcmp(test->ref_val[i].t_name, "track_namespace") == 0) {
+            ret = pmoq_test_set_bits(&msg->track_namespace, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "track_name") == 0) {
+            ret = pmoq_test_set_bits(&msg->track_name, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "subscribe_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->subscribe_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "track_alias") == 0) {
+            ret = pmoq_test_set_u64(&msg->track_alias, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "group_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->group_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "object_send_order") == 0) {
+            ret = pmoq_test_set_u64(&msg->object_send_order, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "object_status") == 0) {
+            ret = pmoq_test_set_u64(&msg->object_status, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "filter_type") == 0) {
+            ret = pmoq_test_set_u64(&msg->filter_type, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "expires") == 0) {
+            ret = pmoq_test_set_u64(&msg->expires, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "content_exists") == 0) {
+            ret = pmoq_test_set_u8(&msg->content_exists, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "error_code") == 0) {
+            ret = pmoq_test_set_u64(&msg->error_code, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "status_code") == 0) {
+            ret = pmoq_test_set_u64(&msg->status_code, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "start_group") == 0) {
+            ret = pmoq_test_set_u64(&msg->start_group, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "start_object") == 0) {
+            ret = pmoq_test_set_u64(&msg->start_object, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "end_group") == 0) {
+            ret = pmoq_test_set_u64(&msg->end_group, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "end_object") == 0) {
+            ret = pmoq_test_set_u64(&msg->end_object, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "largest_group_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->largest_group_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "largest_object_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->largest_object_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "last_group_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->last_group_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "last_object_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->last_object_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "final_group_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->final_group_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "final_object_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->final_object_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "reason_phrase") == 0) {
+            ret = pmoq_test_set_bits(&msg->reason_phrase, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "uri") == 0) {
+            ret = pmoq_test_set_bits(&msg->uri, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "auth_info") == 0) {
+            ret = pmoq_test_set_string(&msg->subscribe_parameters.auth_info,
+                &msg->subscribe_parameters.auth_info_len,
+                test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "selected_version") == 0) {
+            ret = pmoq_test_set_u32(&msg->selected_version, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "versions") == 0) {
+            pmoq_test_set_versions(msg);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "role") == 0) {
+            ret = pmoq_test_set_u8(&msg->setup_parameters.role, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "path") == 0) {
+            ret = pmoq_test_set_string(&msg->setup_parameters.path,
+                &msg->setup_parameters.path_length,
+                test->ref_val[i].t_val);
+        }
+        else {
+            ret = -1;
+        }
+    }
+
     return ret;
 }
 
@@ -888,9 +967,17 @@ int pmoq_msg_format_test_parse_one(pmoq_msg_format_test_case_t* test)
     else if (bytes == NULL) {
         ret = -1;
     }
-    else if (mpoq_test_msg_compare(test, &msg) != 0){
-        ret = -1;
+    else {
+        pmoq_msg_t ref = { 0 };
+
+        if (pmoq_test_set_msg_from_test(&ref, test) != 0) {
+            ret = -1;
+        }
+        else if (mpoq_test_msg_compare(&msg, &ref) != 0) {
+            ret = -1;
+        }
     }
+
     return ret;   
 }
 
@@ -913,91 +1000,9 @@ int pmoq_msg_format_test_format_one(pmoq_msg_format_test_case_t* test)
     int ret = 0;
     pmoq_msg_t msg = { 0 };
 
-    msg.msg_type = test->msg_type;
-    switch (test->msg_type) {
-    case PMOQ_MSG_OBJECT_STREAM:
-        memcpy(&msg.msg_payload.object_stream,
-            test->payload_ref, sizeof(pmoq_msg_object_stream_t));
-        break;
-    case PMOQ_MSG_OBJECT_DATAGRAM:
-        memcpy(&msg.msg_payload.datagram,
-            test->payload_ref, sizeof(pmoq_msg_object_stream_t));
-        break;
-    case PMOQ_MSG_SUBSCRIBE:
-        memcpy(&msg.msg_payload.subscribe,
-            test->payload_ref, sizeof(pmoq_msg_subscribe_t));
-        break;
-    case PMOQ_MSG_SUBSCRIBE_OK:
-        memcpy(&msg.msg_payload.subscribe_ok,
-            test->payload_ref, sizeof(pmoq_msg_subscribe_ok_t));
-        break;
-    case PMOQ_MSG_SUBSCRIBE_ERROR:
-        memcpy(&msg.msg_payload.subscribe_error,
-            test->payload_ref, sizeof(pmoq_msg_subscribe_error_t));
-        break;
-    case PMOQ_MSG_ANNOUNCE:
-        memcpy(&msg.msg_payload.announce,
-            test->payload_ref, sizeof(pmoq_msg_announce_t));
-        break;
-    case PMOQ_MSG_ANNOUNCE_OK:
-        memcpy(&msg.msg_payload.announce_ok,
-            test->payload_ref, sizeof(pmoq_msg_track_namespace_t));
-        break;
-    case PMOQ_MSG_ANNOUNCE_ERROR:
-        memcpy(&msg.msg_payload.announce_error,
-            test->payload_ref, sizeof(pmoq_msg_announce_error_t));
-        break;
-    case PMOQ_MSG_UNANNOUNCE:
-        memcpy(&msg.msg_payload.unannounce,
-            test->payload_ref, sizeof(pmoq_msg_track_namespace_t));
-        break;
-    case PMOQ_MSG_UNSUBSCRIBE:
-        memcpy(&msg.msg_payload.unsubscribe,
-            test->payload_ref, sizeof(pmoq_msg_unsubscribe_t));
-        break;
-    case PMOQ_MSG_SUBSCRIBE_DONE:
-        memcpy(&msg.msg_payload.subscribe_done,
-            test->payload_ref, sizeof(pmoq_msg_subscribe_done_t));
-        break;
-    case PMOQ_MSG_ANNOUNCE_CANCEL:
-        memcpy(&msg.msg_payload.announce_cancel,
-            test->payload_ref, sizeof(pmoq_msg_track_namespace_t));
-        break;
-    case PMOQ_MSG_TRACK_STATUS_REQUEST:
-        memcpy(&msg.msg_payload.track_status_request,
-            test->payload_ref, sizeof(pmoq_msg_track_status_request_t));
-        break;
-    case PMOQ_MSG_TRACK_STATUS:
-        memcpy(&msg.msg_payload.track_status,
-            test->payload_ref, sizeof(pmoq_msg_track_status_t));
-        break;
-    case PMOQ_MSG_GOAWAY:
-        memcpy(&msg.msg_payload.goaway,
-            test->payload_ref, sizeof(pmoq_msg_goaway_t));
-        break;
-    case PMOQ_MSG_CLIENT_SETUP:
-        memcpy(&msg.msg_payload.client_setup,
-            test->payload_ref, sizeof(pmoq_msg_client_setup_t));
-        break;
-    case PMOQ_MSG_SERVER_SETUP:
-        memcpy(&msg.msg_payload.server_setup,
-            test->payload_ref, sizeof(pmoq_msg_server_setup_t));
-        break;
-    case PMOQ_MSG_STREAM_HEADER_TRACK:
-        memcpy(&msg.msg_payload.header_track,
-            test->payload_ref, sizeof(pmoq_msg_stream_header_track_t));
-        break;
-    case PMOQ_MSG_STREAM_HEADER_GROUP:
-        memcpy(&msg.msg_payload.header_group,
-            test->payload_ref, sizeof(pmoq_msg_stream_header_group_t));
-        break;
-    default:
-        /* Unexpected */
+    if (pmoq_test_set_msg_from_test(&msg, test) != 0) {
         ret = -1;
-        break;
-    }
-
-    if (ret == 0) {
+    } else {
         uint8_t buf[2048];
         uint8_t* bytes = buf;
         const uint8_t* bytes_max = bytes + sizeof(msg);
