@@ -756,7 +756,7 @@ int pmoq_test_set_u64(uint64_t * v, char* val)
 
     if (val[0] >= '0' && val[0] <= '9') {
         uint64_t r = val[0] - '0';
-        uint8_t* x = val + 1;
+        uint8_t* x = (uint8_t*)(val + 1);
         while (*x != 0 && ret == 0) {
             r *= 10;
             r += *x - '0';
