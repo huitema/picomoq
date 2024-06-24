@@ -204,7 +204,7 @@ uint8_t* pmoq_subscribe_parameters_format(uint8_t* bytes, const uint8_t* bytes_m
     uint64_t nb_params = (param->auth_info == NULL) ? 0 : 1;
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, nb_params)) != NULL){
         if (param->auth_info != NULL) {
-            bytes = pmoq_msg_string_parameter_format(bytes, bytes_max, PMOQ_SETUP_PARAMETER_PATH, param->auth_info_len, param->auth_info);
+            bytes = pmoq_msg_string_parameter_format(bytes, bytes_max, PMOQ_PARAMETER_AUTHORIZATION_INFO, param->auth_info_len, param->auth_info);
         }
     }
     return bytes;
@@ -229,7 +229,7 @@ const uint8_t* pmoq_subscribe_parameters_parse(const uint8_t* bytes, const uint8
                 }
                 else {
                     switch (key) {
-                    case pmoq_para_auth_info_key:
+                    case PMOQ_PARAMETER_AUTHORIZATION_INFO:
                         if (param->auth_info != NULL) {
                             /* Double definition! */
                             bytes = NULL;
@@ -252,7 +252,7 @@ const uint8_t* pmoq_subscribe_parameters_parse(const uint8_t* bytes, const uint8
     return bytes;
 }
 
-uint8_t* pmoq_msg_object_stream_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_object_stream_t* object_stream) {
+uint8_t* pmoq_msg_object_stream_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t* object_stream) {
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, object_stream->subscribe_id)) != NULL &&
         (bytes = picoquic_frames_varint_encode(bytes, bytes_max, object_stream->track_alias)) != NULL &&
         (bytes = picoquic_frames_varint_encode(bytes, bytes_max, object_stream->group_id)) != NULL &&
@@ -261,7 +261,7 @@ uint8_t* pmoq_msg_object_stream_format(uint8_t* bytes, const uint8_t* bytes_max,
     }
     return bytes;
 }
-const uint8_t* pmoq_msg_object_stream_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_object_stream_t* object_stream)
+const uint8_t* pmoq_msg_object_stream_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* object_stream)
 {
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 4, &object_stream->subscribe_id)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 3, &object_stream->track_alias)) != NULL &&
@@ -276,7 +276,7 @@ const uint8_t* pmoq_msg_object_stream_parse(const uint8_t* bytes, const uint8_t*
     return bytes;
 }
 
-uint8_t* pmoq_msg_subscribe_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_subscribe_t * subscribe)
+uint8_t* pmoq_msg_subscribe_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * subscribe)
 {
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe->subscribe_id)) != NULL &&
         (bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe->track_alias)) != NULL &&
@@ -298,7 +298,7 @@ uint8_t* pmoq_msg_subscribe_format(uint8_t* bytes, const uint8_t* bytes_max, con
     }
     return bytes;
 }
-const uint8_t* pmoq_msg_subscribe_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_subscribe_t* subscribe)
+const uint8_t* pmoq_msg_subscribe_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* subscribe)
 {
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 4, &subscribe->subscribe_id)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 3, &subscribe->track_alias)) != NULL &&
@@ -316,6 +316,7 @@ const uint8_t* pmoq_msg_subscribe_parse(const uint8_t* bytes, const uint8_t* byt
         }
         else if (subscribe->filter_type == 0 ||
             subscribe->filter_type > pmoq_msg_filter_max) {
+            *err = -1;
             bytes = NULL;
         }
 
@@ -326,7 +327,7 @@ const uint8_t* pmoq_msg_subscribe_parse(const uint8_t* bytes, const uint8_t* byt
     return bytes;
 }
 
-uint8_t* pmoq_msg_subscribe_ok_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_subscribe_ok_t * subscribe_ok)
+uint8_t* pmoq_msg_subscribe_ok_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * subscribe_ok)
 {
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe_ok->subscribe_id)) != NULL &&
         (bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe_ok->expires)) != NULL &&
@@ -339,7 +340,7 @@ uint8_t* pmoq_msg_subscribe_ok_format(uint8_t* bytes, const uint8_t* bytes_max, 
     }
     return bytes;
 }
-const uint8_t* pmoq_msg_subscribe_ok_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_subscribe_ok_t* subscribe_ok)
+const uint8_t* pmoq_msg_subscribe_ok_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* subscribe_ok)
 {
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 2, &subscribe_ok->subscribe_id)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &subscribe_ok->expires)) != NULL &&
@@ -357,53 +358,53 @@ const uint8_t* pmoq_msg_subscribe_ok_parse(const uint8_t* bytes, const uint8_t* 
     return bytes;
 }
 
-uint8_t* pmoq_msg_subscribe_error_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_subscribe_error_t * subscribe_error)
+uint8_t* pmoq_msg_subscribe_error_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * subscribe_error)
 {
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe_error->subscribe_id)) != NULL &&
         (bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe_error->error_code)) != NULL &&
         (bytes = pmoq_bits_format(bytes, bytes_max, &subscribe_error->reason_phrase)) != NULL) {
-        bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe_error->error_code);
+        bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe_error->track_alias);
     }
     return bytes; 
 }
-const uint8_t* pmoq_msg_subscribe_error_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_subscribe_error_t* subscribe_error)
+const uint8_t* pmoq_msg_subscribe_error_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* subscribe_error)
 {
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 3, &subscribe_error->subscribe_id)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 2, &subscribe_error->error_code)) != NULL &&
         (bytes = pmoq_bits_parse(bytes, bytes_max, err, needed + 1, &subscribe_error->reason_phrase)) != NULL) {
-        bytes = pmoq_varint_parse(bytes, bytes_max, err, needed, &subscribe_error->error_code);
+        bytes = pmoq_varint_parse(bytes, bytes_max, err, needed, &subscribe_error->track_alias);
     }
     return bytes;
 }
 
-uint8_t* pmoq_msg_announce_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_announce_t * announce)
+uint8_t* pmoq_msg_announce_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * announce)
 {
     if ((bytes = pmoq_bits_format(bytes, bytes_max, &announce->track_namespace)) != NULL) {
-        bytes = pmoq_subscribe_parameters_format(bytes, bytes_max, &announce->announce_parameters);
+        bytes = pmoq_subscribe_parameters_format(bytes, bytes_max, &announce->subscribe_parameters);
     }
  
     return bytes;
 }
-const uint8_t* pmoq_msg_announce_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_announce_t * announce)
+const uint8_t* pmoq_msg_announce_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t * announce)
 {
     if ((bytes = pmoq_bits_parse(bytes, bytes_max, err, needed+1, &announce->track_namespace)) != NULL) {
-        bytes = pmoq_subscribe_parameters_parse(bytes, bytes_max, err, needed, &announce->announce_parameters);
+        bytes = pmoq_subscribe_parameters_parse(bytes, bytes_max, err, needed, &announce->subscribe_parameters);
     }
 
     return bytes;
 }
 
-uint8_t* pmoq_msg_track_namespace_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_track_namespace_t * tns)
+uint8_t* pmoq_msg_track_namespace_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * tns)
 {
     /* is there a size limit ? */
     return pmoq_bits_format(bytes, bytes_max, &tns->track_namespace);
 }
-const uint8_t* pmoq_msg_track_namespace_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_track_namespace_t* tns)
+const uint8_t* pmoq_msg_track_namespace_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* tns)
 {
     return pmoq_bits_parse(bytes, bytes_max, err, needed, &tns->track_namespace);
 }
 
-uint8_t* pmoq_msg_announce_error_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_announce_error_t * announce_error)
+uint8_t* pmoq_msg_announce_error_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * announce_error)
 {
     if ((bytes = pmoq_bits_format(bytes, bytes_max, &announce_error->track_namespace)) != NULL &&
         (bytes = picoquic_frames_varint_encode(bytes, bytes_max, announce_error->error_code)) != NULL) {
@@ -411,7 +412,7 @@ uint8_t* pmoq_msg_announce_error_format(uint8_t* bytes, const uint8_t* bytes_max
     }
     return bytes;
 }
-const uint8_t* pmoq_msg_announce_error_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_announce_error_t* announce_error)
+const uint8_t* pmoq_msg_announce_error_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* announce_error)
 {
     if ((bytes = pmoq_bits_parse(bytes, bytes_max, err, needed + 1, &announce_error->track_namespace)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &announce_error->error_code)) != NULL) {
@@ -420,16 +421,16 @@ const uint8_t* pmoq_msg_announce_error_parse(const uint8_t* bytes, const uint8_t
     return bytes;
 }
 
-uint8_t* pmoq_msg_unsubscribe_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_unsubscribe_t * unsubscribe)
+uint8_t* pmoq_msg_unsubscribe_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * unsubscribe)
 {
     return bytes = picoquic_frames_varint_encode(bytes, bytes_max, unsubscribe->subscribe_id);
 }
-const uint8_t* pmoq_msg_unsubscribe_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_unsubscribe_t * unsubscribe)
+const uint8_t* pmoq_msg_unsubscribe_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t * unsubscribe)
 {
     return bytes = pmoq_varint_parse(bytes, bytes_max, err, needed, &unsubscribe->subscribe_id);
 }
 
-uint8_t* pmoq_msg_subscribe_done_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_subscribe_done_t * subscribe_done)
+uint8_t* pmoq_msg_subscribe_done_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * subscribe_done)
 {
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe_done->subscribe_id)) != NULL &&
         (bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe_done->status_code)) != NULL &&
@@ -443,7 +444,7 @@ uint8_t* pmoq_msg_subscribe_done_format(uint8_t* bytes, const uint8_t* bytes_max
     }
     return bytes;
 }
-const uint8_t* pmoq_msg_subscribe_done_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_subscribe_done_t* subscribe_done)
+const uint8_t* pmoq_msg_subscribe_done_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* subscribe_done)
 {
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 3, &subscribe_done->subscribe_id)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 2, &subscribe_done->status_code)) != NULL &&
@@ -462,14 +463,14 @@ const uint8_t* pmoq_msg_subscribe_done_parse(const uint8_t* bytes, const uint8_t
     return bytes;
 }
 
-uint8_t* pmoq_msg_track_status_request_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_track_status_request_t * track_status_request)
+uint8_t* pmoq_msg_track_status_request_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * track_status_request)
 {
     if ((bytes = pmoq_bits_format(bytes, bytes_max, &track_status_request->track_namespace)) != NULL) {
         bytes = pmoq_bits_format(bytes, bytes_max, &track_status_request->track_name);
     }
     return bytes; 
 }
-const uint8_t* pmoq_msg_track_status_request_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_track_status_request_t* track_status_request)
+const uint8_t* pmoq_msg_track_status_request_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* track_status_request)
 {
     if ((bytes = pmoq_bits_parse(bytes, bytes_max, err, needed + 1, &track_status_request->track_namespace)) != NULL) {
         bytes = pmoq_bits_parse(bytes, bytes_max, err, needed, &track_status_request->track_name);
@@ -477,7 +478,7 @@ const uint8_t* pmoq_msg_track_status_request_parse(const uint8_t* bytes, const u
     return bytes;
 }
 
-uint8_t* pmoq_msg_track_status_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_track_status_t * track_status)
+uint8_t* pmoq_msg_track_status_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * track_status)
 {
     if ((bytes = pmoq_bits_format(bytes, bytes_max, &track_status->track_namespace)) != NULL &&
         (bytes = pmoq_bits_format(bytes, bytes_max, &track_status->track_name)) != NULL &&
@@ -490,7 +491,7 @@ uint8_t* pmoq_msg_track_status_format(uint8_t* bytes, const uint8_t* bytes_max, 
     }
     return bytes; 
 }
-const uint8_t* pmoq_msg_track_status_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_track_status_t* track_status)
+const uint8_t* pmoq_msg_track_status_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* track_status)
 {
     if ((bytes = pmoq_bits_parse(bytes, bytes_max, err, needed + 2, &track_status->track_namespace)) != NULL &&
         (bytes = pmoq_bits_parse(bytes, bytes_max, err, needed + 1, &track_status->track_name)) != NULL &&
@@ -508,16 +509,16 @@ const uint8_t* pmoq_msg_track_status_parse(const uint8_t* bytes, const uint8_t* 
     return bytes;
 }
 
-uint8_t* pmoq_msg_goaway_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_goaway_t * goaway)
+uint8_t* pmoq_msg_goaway_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * goaway)
 {
     return pmoq_bits_format(bytes, bytes_max, &goaway->uri);
 }
-const uint8_t* pmoq_msg_goaway_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_goaway_t * goaway)
+const uint8_t* pmoq_msg_goaway_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t * goaway)
 {
     return pmoq_bits_parse(bytes, bytes_max, err, needed, &goaway->uri);
 }
 
-uint8_t* pmoq_msg_client_setup_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_client_setup_t * client_setup)
+uint8_t* pmoq_msg_client_setup_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * client_setup)
 {
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, client_setup->supported_versions_nb)) != NULL) {
         if (client_setup->supported_versions_nb > PMOQ_VERSION_NUMBER_MAX) {
@@ -538,7 +539,7 @@ uint8_t* pmoq_msg_client_setup_format(uint8_t* bytes, const uint8_t* bytes_max, 
 
     return bytes;
 }
-const uint8_t* pmoq_msg_client_setup_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_client_setup_t * client_setup)
+const uint8_t* pmoq_msg_client_setup_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t * client_setup)
 {
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 2, &client_setup->supported_versions_nb)) != NULL) {
         if (client_setup->supported_versions_nb > PMOQ_VERSION_NUMBER_MAX) {
@@ -565,14 +566,14 @@ const uint8_t* pmoq_msg_client_setup_parse(const uint8_t* bytes, const uint8_t* 
     return bytes;
 }
 
-uint8_t* pmoq_msg_server_setup_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_server_setup_t* server_setup)
+uint8_t* pmoq_msg_server_setup_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t* server_setup)
 {
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, server_setup->selected_version)) != NULL) {
         bytes = pmoq_msg_setup_parameters_format(bytes, bytes_max, &server_setup->setup_parameters);
     }
     return bytes;
 }
-const uint8_t* pmoq_msg_server_setup_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_server_setup_t* server_setup)
+const uint8_t* pmoq_msg_server_setup_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* server_setup)
 {
     uint64_t v;
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed+1, &v)) != NULL) {
@@ -588,7 +589,7 @@ const uint8_t* pmoq_msg_server_setup_parse(const uint8_t* bytes, const uint8_t* 
     return bytes;
 }
 
-uint8_t* pmoq_msg_stream_header_track_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_stream_header_track_t * header_track)
+uint8_t* pmoq_msg_stream_header_track_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * header_track)
 {
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, header_track->subscribe_id)) != NULL &&
         (bytes = picoquic_frames_varint_encode(bytes, bytes_max, header_track->track_alias)) != NULL)
@@ -597,7 +598,7 @@ uint8_t* pmoq_msg_stream_header_track_format(uint8_t* bytes, const uint8_t* byte
     }
     return bytes;
 }
-const uint8_t* pmoq_msg_stream_header_track_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_stream_header_track_t* header_track)
+const uint8_t* pmoq_msg_stream_header_track_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* header_track)
 {
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 2, &header_track->subscribe_id)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &header_track->track_alias)) != NULL)
@@ -607,7 +608,7 @@ const uint8_t* pmoq_msg_stream_header_track_parse(const uint8_t* bytes, const ui
     return bytes;
 }
 
-uint8_t* pmoq_msg_stream_header_group_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_stream_header_group_t * header_group)
+uint8_t* pmoq_msg_stream_header_group_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * header_group)
 { 
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, header_group->subscribe_id)) != NULL &&
         (bytes = picoquic_frames_varint_encode(bytes, bytes_max, header_group->track_alias)) != NULL &&
@@ -617,7 +618,7 @@ uint8_t* pmoq_msg_stream_header_group_format(uint8_t* bytes, const uint8_t* byte
     }
     return bytes;
 }
-const uint8_t* pmoq_msg_stream_header_group_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_stream_header_group_t* header_group)
+const uint8_t* pmoq_msg_stream_header_group_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* header_group)
 {
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 3, &header_group->subscribe_id)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 2, &header_group->track_alias)) != NULL &&
@@ -627,7 +628,7 @@ const uint8_t* pmoq_msg_stream_header_group_parse(const uint8_t* bytes, const ui
     return bytes;
 }
 
-uint8_t* pmoq_msg_stream_object_header_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_stream_object_header_t * object_header)
+uint8_t* pmoq_msg_stream_object_header_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * object_header)
 { 
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, object_header->object_id)) != NULL &&
         (bytes = picoquic_frames_varint_encode(bytes, bytes_max, object_header->payload_length)) != NULL) {
@@ -637,7 +638,7 @@ uint8_t* pmoq_msg_stream_object_header_format(uint8_t* bytes, const uint8_t* byt
     }
     return bytes;
 }
-const uint8_t* pmoq_msg_stream_object_header_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_stream_object_header_t * object_header)
+const uint8_t* pmoq_msg_stream_object_header_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t * object_header)
 { 
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed+1, &object_header->object_id)) != NULL &&
         (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed, &object_header->payload_length)) != NULL) {
@@ -656,61 +657,61 @@ uint8_t * pmoq_msg_keyed_format(uint8_t* bytes, const uint8_t* bytes_max, uint64
 {
     switch (msg_type) {
     case PMOQ_MSG_OBJECT_STREAM:
-        bytes = pmoq_msg_object_stream_format(bytes, bytes_max, &msg->msg_payload.object_stream);
+        bytes = pmoq_msg_object_stream_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_OBJECT_DATAGRAM:
-        bytes = pmoq_msg_object_stream_format(bytes, bytes_max, &msg->msg_payload.datagram);
+        bytes = pmoq_msg_object_stream_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_SUBSCRIBE:
-        bytes = pmoq_msg_subscribe_format(bytes, bytes_max, &msg->msg_payload.subscribe);
+        bytes = pmoq_msg_subscribe_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_SUBSCRIBE_OK:
-        bytes = pmoq_msg_subscribe_ok_format(bytes, bytes_max, &msg->msg_payload.subscribe_ok);
+        bytes = pmoq_msg_subscribe_ok_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_SUBSCRIBE_ERROR:
-        bytes = pmoq_msg_subscribe_error_format(bytes, bytes_max, &msg->msg_payload.subscribe_error);
+        bytes = pmoq_msg_subscribe_error_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_ANNOUNCE:
-        bytes = pmoq_msg_announce_format(bytes, bytes_max, &msg->msg_payload.announce);
+        bytes = pmoq_msg_announce_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_ANNOUNCE_OK:
-        bytes = pmoq_msg_track_namespace_format(bytes, bytes_max, &msg->msg_payload.announce_ok);
+        bytes = pmoq_msg_track_namespace_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_ANNOUNCE_ERROR:
-        bytes = pmoq_msg_announce_error_format(bytes, bytes_max, &msg->msg_payload.announce_error);
+        bytes = pmoq_msg_announce_error_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_UNANNOUNCE:
-        bytes = pmoq_msg_track_namespace_format(bytes, bytes_max, &msg->msg_payload.unannounce);
+        bytes = pmoq_msg_track_namespace_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_UNSUBSCRIBE:
-        bytes = pmoq_msg_unsubscribe_format(bytes, bytes_max, &msg->msg_payload.unsubscribe);
+        bytes = pmoq_msg_unsubscribe_format(bytes, bytes_max,  msg);
         break;
     case PMOQ_MSG_SUBSCRIBE_DONE:
-        bytes = pmoq_msg_subscribe_done_format(bytes, bytes_max, &msg->msg_payload.subscribe_done);
+        bytes = pmoq_msg_subscribe_done_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_ANNOUNCE_CANCEL:
-        bytes = pmoq_msg_track_namespace_format(bytes, bytes_max, &msg->msg_payload.announce_cancel);
+        bytes = pmoq_msg_track_namespace_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_TRACK_STATUS_REQUEST:
-        bytes = pmoq_msg_track_status_request_format(bytes, bytes_max, &msg->msg_payload.track_status_request);
+        bytes = pmoq_msg_track_status_request_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_TRACK_STATUS:
-        bytes = pmoq_msg_track_status_format(bytes, bytes_max, &msg->msg_payload.track_status);
+        bytes = pmoq_msg_track_status_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_GOAWAY:
-        bytes = pmoq_msg_goaway_format(bytes, bytes_max, &msg->msg_payload.goaway);
+        bytes = pmoq_msg_goaway_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_CLIENT_SETUP:
-        bytes = pmoq_msg_client_setup_format(bytes, bytes_max, &msg->msg_payload.client_setup);
+        bytes = pmoq_msg_client_setup_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_SERVER_SETUP:
-        bytes = pmoq_msg_server_setup_format(bytes, bytes_max, &msg->msg_payload.server_setup);
+        bytes = pmoq_msg_server_setup_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_STREAM_HEADER_TRACK:
-        bytes = pmoq_msg_stream_header_track_format(bytes, bytes_max, &msg->msg_payload.header_track);
+        bytes = pmoq_msg_stream_header_track_format(bytes, bytes_max, msg);
         break;
     case PMOQ_MSG_STREAM_HEADER_GROUP:
-        bytes = pmoq_msg_stream_header_group_format(bytes, bytes_max, &msg->msg_payload.header_group);
+        bytes = pmoq_msg_stream_header_group_format(bytes, bytes_max, msg);
         break;
     default:
         /* Unexpected */
@@ -719,73 +720,66 @@ uint8_t * pmoq_msg_keyed_format(uint8_t* bytes, const uint8_t* bytes_max, uint64
     }
     return bytes;
 }
-uint8_t * pmoq_msg_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t* msg)
-{
-    if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, msg->msg_type)) != NULL) {
-        bytes = pmoq_msg_keyed_format(bytes, bytes_max, msg->msg_type, msg);
-    }
-    return bytes;
-}
 
 const uint8_t * pmoq_msg_keyed_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, uint64_t msg_type, pmoq_msg_t* msg)
 {
     switch (msg_type) {
     case PMOQ_MSG_OBJECT_STREAM:
-        bytes = pmoq_msg_object_stream_parse(bytes, bytes_max, err, needed, &msg->msg_payload.object_stream);
+        bytes = pmoq_msg_object_stream_parse(bytes, bytes_max, err, needed,  msg);
         break;
     case PMOQ_MSG_OBJECT_DATAGRAM:
-        bytes = pmoq_msg_object_stream_parse(bytes, bytes_max, err, needed, &msg->msg_payload.datagram);
+        bytes = pmoq_msg_object_stream_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_SUBSCRIBE: 
-        bytes = pmoq_msg_subscribe_parse(bytes, bytes_max, err, needed, &msg->msg_payload.subscribe);
+        bytes = pmoq_msg_subscribe_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_SUBSCRIBE_OK:
-        bytes = pmoq_msg_subscribe_ok_parse(bytes, bytes_max, err, needed, &msg->msg_payload.subscribe_ok);
+        bytes = pmoq_msg_subscribe_ok_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_SUBSCRIBE_ERROR:
-        bytes = pmoq_msg_subscribe_error_parse(bytes, bytes_max, err, needed, &msg->msg_payload.subscribe_error);
+        bytes = pmoq_msg_subscribe_error_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_ANNOUNCE:
-        bytes = pmoq_msg_announce_parse(bytes, bytes_max, err, needed, &msg->msg_payload.announce);
+        bytes = pmoq_msg_announce_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_ANNOUNCE_OK:
-        bytes = pmoq_msg_track_namespace_parse(bytes, bytes_max, err, needed, &msg->msg_payload.announce_ok);
+        bytes = pmoq_msg_track_namespace_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_ANNOUNCE_ERROR:
-        bytes = pmoq_msg_announce_error_parse(bytes, bytes_max, err, needed, &msg->msg_payload.announce_error);
+        bytes = pmoq_msg_announce_error_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_UNANNOUNCE:
-        bytes = pmoq_msg_track_namespace_parse(bytes, bytes_max, err, needed, &msg->msg_payload.unannounce);
+        bytes = pmoq_msg_track_namespace_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_UNSUBSCRIBE:
-        bytes = pmoq_msg_unsubscribe_parse(bytes, bytes_max, err, needed, &msg->msg_payload.unsubscribe);
+        bytes = pmoq_msg_unsubscribe_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_SUBSCRIBE_DONE:
-        bytes = pmoq_msg_subscribe_done_parse(bytes, bytes_max, err, needed, &msg->msg_payload.subscribe_done);
+        bytes = pmoq_msg_subscribe_done_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_ANNOUNCE_CANCEL:
-        bytes = pmoq_msg_track_namespace_parse(bytes, bytes_max, err, needed, &msg->msg_payload.announce_cancel);
+        bytes = pmoq_msg_track_namespace_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_TRACK_STATUS_REQUEST:
-        bytes = pmoq_msg_track_status_request_parse(bytes, bytes_max, err, needed, &msg->msg_payload.track_status_request);
+        bytes = pmoq_msg_track_status_request_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_TRACK_STATUS:
-        bytes = pmoq_msg_track_status_parse(bytes, bytes_max, err, needed, &msg->msg_payload.track_status);
+        bytes = pmoq_msg_track_status_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_GOAWAY:
-        bytes = pmoq_msg_goaway_parse(bytes, bytes_max, err, needed, &msg->msg_payload.goaway);
+        bytes = pmoq_msg_goaway_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_CLIENT_SETUP:
-        bytes = pmoq_msg_client_setup_parse(bytes, bytes_max, err, needed, &msg->msg_payload.client_setup);
+        bytes = pmoq_msg_client_setup_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_SERVER_SETUP:
-        bytes = pmoq_msg_server_setup_parse(bytes, bytes_max, err, needed, &msg->msg_payload.server_setup);
+        bytes = pmoq_msg_server_setup_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_STREAM_HEADER_TRACK:
-        bytes = pmoq_msg_stream_header_track_parse(bytes, bytes_max, err, needed, &msg->msg_payload.header_track);
+        bytes = pmoq_msg_stream_header_track_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_STREAM_HEADER_GROUP:
-        bytes = pmoq_msg_stream_header_group_parse(bytes, bytes_max, err, needed, &msg->msg_payload.header_group);
+        bytes = pmoq_msg_stream_header_group_parse(bytes, bytes_max, err, needed, msg);
         break;
     default:
         /* Unexpected */
@@ -795,6 +789,15 @@ const uint8_t * pmoq_msg_keyed_parse(const uint8_t* bytes, const uint8_t* bytes_
     }
     return bytes;
 }
+
+uint8_t * pmoq_msg_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t* msg)
+{
+    if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, msg->msg_type)) != NULL) {
+        bytes = pmoq_msg_keyed_format(bytes, bytes_max, msg->msg_type, msg);
+    }
+    return bytes;
+}
+
 const uint8_t * pmoq_msg_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* msg)
 {
     if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed, &msg->msg_type)) != NULL) {
