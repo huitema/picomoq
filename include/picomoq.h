@@ -8,6 +8,7 @@ extern "C" {
 */
 #define PMOQ_MSG_OBJECT_STREAM        0x0
 #define PMOQ_MSG_OBJECT_DATAGRAM      0x1
+#define PMOQ_MSG_SUBSCRIBE_UPDATE     0x2
 #define PMOQ_MSG_SUBSCRIBE            0x3
 #define PMOQ_MSG_SUBSCRIBE_OK         0x4
 #define PMOQ_MSG_SUBSCRIBE_ERROR      0x5

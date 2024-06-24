@@ -327,6 +327,31 @@ const uint8_t* pmoq_msg_subscribe_parse(const uint8_t* bytes, const uint8_t* byt
     return bytes;
 }
 
+
+uint8_t* pmoq_msg_subscribe_update_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * subscribe)
+{
+    if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe->subscribe_id)) != NULL &&
+        (bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe->start_group)) != NULL &&
+        (bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe->start_object)) != NULL &&
+        (bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe->end_group)) != NULL &&
+        (bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe->end_object)) != NULL) {
+        bytes = pmoq_subscribe_parameters_format(bytes, bytes_max, &subscribe->subscribe_parameters);
+    }
+    return bytes;
+}
+
+const uint8_t* pmoq_msg_subscribe_update_parse(const uint8_t* bytes, const uint8_t* bytes_max, int* err, int needed, pmoq_msg_t* subscribe)
+{
+    if ((bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 4, &subscribe->subscribe_id)) != NULL &&
+        (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &subscribe->start_group)) != NULL &&
+        (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &subscribe->start_object)) != NULL &&
+        (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed + 1, &subscribe->end_group)) != NULL &&
+        (bytes = pmoq_varint_parse(bytes, bytes_max, err, needed, &subscribe->end_object)) != NULL) {
+        bytes = pmoq_subscribe_parameters_parse(bytes, bytes_max, err, needed, &subscribe->subscribe_parameters);
+    }
+    return bytes;
+}
+
 uint8_t* pmoq_msg_subscribe_ok_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * subscribe_ok)
 {
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, subscribe_ok->subscribe_id)) != NULL &&
@@ -662,6 +687,9 @@ uint8_t * pmoq_msg_keyed_format(uint8_t* bytes, const uint8_t* bytes_max, uint64
     case PMOQ_MSG_OBJECT_DATAGRAM:
         bytes = pmoq_msg_object_stream_format(bytes, bytes_max, msg);
         break;
+    case PMOQ_MSG_SUBSCRIBE_UPDATE:
+        bytes = pmoq_msg_subscribe_update_format(bytes, bytes_max, msg);
+        break;
     case PMOQ_MSG_SUBSCRIBE:
         bytes = pmoq_msg_subscribe_format(bytes, bytes_max, msg);
         break;
@@ -729,6 +757,9 @@ const uint8_t * pmoq_msg_keyed_parse(const uint8_t* bytes, const uint8_t* bytes_
         break;
     case PMOQ_MSG_OBJECT_DATAGRAM:
         bytes = pmoq_msg_object_stream_parse(bytes, bytes_max, err, needed, msg);
+        break;
+    case PMOQ_MSG_SUBSCRIBE_UPDATE: 
+        bytes = pmoq_msg_subscribe_update_parse(bytes, bytes_max, err, needed, msg);
         break;
     case PMOQ_MSG_SUBSCRIBE: 
         bytes = pmoq_msg_subscribe_parse(bytes, bytes_max, err, needed, msg);
