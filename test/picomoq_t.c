@@ -96,7 +96,6 @@ int get_test_number(char const * test_name)
     return test_number;
 }
 
-
 int main(int argc, char* argv[])
 {
     int ret = 0;
