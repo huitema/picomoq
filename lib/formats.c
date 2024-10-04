@@ -702,6 +702,7 @@ const uint8_t* pmoq_msg_server_setup_parse(const uint8_t* bytes, const uint8_t* 
     return bytes;
 }
 
+#if 0
 uint8_t* pmoq_msg_stream_header_group_format(uint8_t* bytes, const uint8_t* bytes_max, const pmoq_msg_t * header_group)
 { 
     if ((bytes = picoquic_frames_varint_encode(bytes, bytes_max, header_group->subscribe_id)) != NULL &&
@@ -746,6 +747,7 @@ const uint8_t* pmoq_msg_stream_object_header_parse(const uint8_t* bytes, const u
     }
     return bytes;
 }
+#endif
 
 uint8_t * pmoq_msg_keyed_format(uint8_t* bytes, const uint8_t* bytes_max, uint64_t msg_type, const pmoq_msg_t* msg)
 {

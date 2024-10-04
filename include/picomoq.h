@@ -124,11 +124,6 @@ typedef struct st_pmoq_msg_t {
     pmoq_bits_t track_name;
     uint64_t subscribe_id;
     uint64_t track_alias;
-    uint64_t group_id;
-    uint64_t object_id;
-    uint64_t object_send_order;
-    uint64_t payload_length;
-    uint64_t object_status;
     uint64_t filter_type;
     uint64_t expires;
     uint8_t content_exists; /* value: 0 or 1 */

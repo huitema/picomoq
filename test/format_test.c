@@ -729,9 +729,11 @@ int mpoq_test_msg_compare(const pmoq_msg_t* msg, const pmoq_msg_t* msg2)
         pmoq_bits_cmp(&msg->track_name, &msg2->track_name) != 0 ||
         msg->subscribe_id != msg2->subscribe_id ||
         msg->track_alias != msg2->track_alias ||
+#if 0
         msg->group_id != msg2->group_id ||
         msg->object_send_order != msg2->object_send_order ||
         msg->object_status != msg2->object_status ||
+#endif
         msg->filter_type != msg2->filter_type ||
         msg->expires != msg2->expires ||
         msg->content_exists != msg2->content_exists ||
@@ -760,6 +762,23 @@ int mpoq_test_msg_compare(const pmoq_msg_t* msg, const pmoq_msg_t* msg2)
                 break;
             }
         }
+    }
+    return ret;
+}
+
+
+int mpoq_test_strm_compare(const pmoq_strm_t* msg, const pmoq_strm_t* msg2)
+{
+    int ret = 0;
+    if (msg->msg_type != msg2->msg_type ||
+        msg->subscribe_id != msg2->subscribe_id ||
+        msg->track_alias != msg2->track_alias ||
+        msg->group_id != msg2->group_id ||
+        msg->object_id != msg2->object_id ||
+        msg->payload_length != msg2->payload_length ||
+        msg->object_status != msg2->object_status ||
+        msg->publisher_priority != msg2->publisher_priority) {
+        ret = -1;
     }
     return ret;
 }
@@ -941,15 +960,6 @@ int pmoq_test_set_msg_from_test(pmoq_msg_t *msg, pmoq_msg_format_test_case_t* te
         else if (strcmp(test->ref_val[i].t_name, "track_alias") == 0) {
             ret = pmoq_test_set_u64(&msg->track_alias, test->ref_val[i].t_val);
         }
-        else if (strcmp(test->ref_val[i].t_name, "group_id") == 0) {
-            ret = pmoq_test_set_u64(&msg->group_id, test->ref_val[i].t_val);
-        }
-        else if (strcmp(test->ref_val[i].t_name, "object_send_order") == 0) {
-            ret = pmoq_test_set_u64(&msg->object_send_order, test->ref_val[i].t_val);
-        }
-        else if (strcmp(test->ref_val[i].t_name, "object_status") == 0) {
-            ret = pmoq_test_set_u64(&msg->object_status, test->ref_val[i].t_val);
-        }
         else if (strcmp(test->ref_val[i].t_name, "filter_type") == 0) {
             ret = pmoq_test_set_u64(&msg->filter_type, test->ref_val[i].t_val);
         }
@@ -1022,6 +1032,41 @@ int pmoq_test_set_msg_from_test(pmoq_msg_t *msg, pmoq_msg_format_test_case_t* te
         }
         else {
             ret = -1;
+        }
+    }
+
+    return ret;
+}
+
+
+int pmoq_test_set_strm_from_test(pmoq_strm_t* msg, pmoq_msg_format_test_case_t* test)
+{
+    int ret = 0;
+    size_t nb_vals = test->ref_val_size / sizeof(format_test_val_t);
+
+    msg->msg_type = test->msg_type;
+
+    for (size_t i = 0; ret == 0 && i < nb_vals; i++) {
+        if (strcmp(test->ref_val[i].t_name, "subscribe_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->subscribe_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "track_alias") == 0) {
+            ret = pmoq_test_set_u64(&msg->track_alias, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "group_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->group_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "object_id") == 0) {
+            ret = pmoq_test_set_u64(&msg->object_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "payload_length") == 0) {
+            ret = pmoq_test_set_u64(&msg->object_id, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "object_status") == 0) {
+            ret = pmoq_test_set_u64(&msg->object_status, test->ref_val[i].t_val);
+        }
+        else if (strcmp(test->ref_val[i].t_name, "publisher_priority") == 0) {
+            ret = pmoq_test_set_u8(&msg->publisher_priority, test->ref_val[i].t_val);
         }
     }
 
