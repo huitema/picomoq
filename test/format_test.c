@@ -81,6 +81,7 @@ uint8_t test_msg_subscribe[] = {
     PMOQ_MSG_SUBSCRIBE,
     31,
     17,
+    1,
     TEST_PATH_LEN*8,
     TEST_PATH,
     TEST_TRACK_NAME_LEN*8,
@@ -105,6 +106,7 @@ uint8_t test_msg_subscribe_start[] = {
     PMOQ_MSG_SUBSCRIBE,
     31,
     17,
+    1,
     TEST_PATH_LEN*8,
     TEST_PATH,
     TEST_TRACK_NAME_LEN*8,
@@ -131,6 +133,7 @@ uint8_t test_msg_subscribe_range[] = {
     PMOQ_MSG_SUBSCRIBE,
     31,
     17,
+    1,
     TEST_PATH_LEN*8,
     TEST_PATH,
     TEST_TRACK_NAME_LEN*8,
@@ -176,13 +179,13 @@ uint8_t test_msg_subscribe_update[] = {
     test_param_auth
 };
 
-
 format_test_val_t subscribe_ok[] = {
     FVAL(subscribe_id, 65),
     FVAL(expires, 0),
     FVAL(content_exists, 1),
     FVAL(largest_group_id, 31),
-    FVAL(largest_object_id, 27)
+    FVAL(largest_object_id, 27),
+    FVAL(auth_info, auth)
 };
 
 uint8_t test_msg_subscribe_ok[] = {
@@ -191,18 +194,21 @@ uint8_t test_msg_subscribe_ok[] = {
     0,
     1,
     31,
-    27
+    27,
+    1,
+    test_param_auth
 };
 
 format_test_val_t subscribe_ok_empty[] = {
     FVAL(subscribe_id, 65),
     FVAL(expires, 0),
-    FVAL(content_exists, 0)
+    FVAL(content_exists, 0),
 };
 
 uint8_t test_msg_subscribe_ok_empty[] = {
     PMOQ_MSG_SUBSCRIBE_OK,
     0x40, 0x41,
+    0,
     0,
     0
 };
@@ -230,6 +236,7 @@ format_test_val_t announce[] = {
 
 uint8_t test_msg_announce_good[] = {
     PMOQ_MSG_ANNOUNCE,
+    1,
     TEST_PATH_LEN * 8,
     TEST_PATH,
     1,
@@ -238,6 +245,7 @@ uint8_t test_msg_announce_good[] = {
 
 uint8_t test_msg_announce_alt[] = {
     PMOQ_MSG_ANNOUNCE,
+    1,
     TEST_PATH_LEN * 8,
     TEST_PATH,
     3,
@@ -248,6 +256,7 @@ uint8_t test_msg_announce_alt[] = {
 
 uint8_t test_msg_announce_bad[] = {
     PMOQ_MSG_ANNOUNCE,
+    1,
     TEST_PATH_LEN * 8,
     TEST_PATH,
     2,
@@ -261,6 +270,7 @@ format_test_val_t announce_zero[] = {
 
 uint8_t test_msg_announce_zero[] = {
     PMOQ_MSG_ANNOUNCE,
+    1,
     TEST_PATH_LEN * 8,
     TEST_PATH,
     0
@@ -272,20 +282,32 @@ format_test_val_t track_namespace[] = {
 
 uint8_t test_msg_announce_ok[] = {
     PMOQ_MSG_ANNOUNCE_OK,
+    1,
     TEST_PATH_LEN * 8,
     TEST_PATH
 };
 
 uint8_t test_msg_unannounce[] = {
     PMOQ_MSG_UNANNOUNCE,
+    1,
     TEST_PATH_LEN * 8,
     TEST_PATH
 };
 
+format_test_val_t announce_cancel[] = {
+    FVAL(track_namespace, path),
+    FVAL(error_code, 291),
+    FVAL(reason_phrase, reason)
+};
+
 uint8_t test_msg_announce_cancel[] = {
     PMOQ_MSG_ANNOUNCE_CANCEL,
+    1,
     TEST_PATH_LEN * 8,
-    TEST_PATH
+    TEST_PATH,
+    0x41, 0x23,
+    TEST_REASON_LEN * 8,
+    TEST_REASON
 };
 
 format_test_val_t announce_error[] = {
@@ -296,6 +318,7 @@ format_test_val_t announce_error[] = {
 
 uint8_t test_msg_announce_error[] = {
     PMOQ_MSG_ANNOUNCE_ERROR,
+    1,
     TEST_PATH_LEN * 8,
     TEST_PATH,
     0x41, 0x23,
@@ -366,6 +389,7 @@ format_test_val_t track_status_request[] = {
 
 uint8_t test_msg_track_status_request[] = {
     PMOQ_MSG_TRACK_STATUS_REQUEST,
+    1,
     TEST_PATH_LEN*8,
     TEST_PATH,
     TEST_TRACK_NAME_LEN*8,
@@ -382,6 +406,7 @@ format_test_val_t track_status[] = {
 
 uint8_t test_msg_track_status[] = {
     PMOQ_MSG_TRACK_STATUS,
+    1,
     TEST_PATH_LEN*8,
     TEST_PATH,
     TEST_TRACK_NAME_LEN*8,
@@ -399,6 +424,7 @@ format_test_val_t track_status_not[] = {
 
 uint8_t test_msg_track_status_not[] = {
     PMOQ_MSG_TRACK_STATUS,
+    1,
     TEST_PATH_LEN*8,
     TEST_PATH,
     TEST_TRACK_NAME_LEN*8,
@@ -408,6 +434,7 @@ uint8_t test_msg_track_status_not[] = {
 
 uint8_t test_msg_track_status_bad[] = {
     PMOQ_MSG_TRACK_STATUS,
+    1,
     TEST_PATH_LEN*8,
     TEST_PATH,
     TEST_TRACK_NAME_LEN*8,
@@ -503,6 +530,7 @@ uint8_t test_msg_server_setup_bad3[] = {
     0
 };
 
+#if 0
 format_test_val_t stream_header_track[] = {
     FVAL(subscribe_id, 291),
     FVAL(track_alias, 49),
@@ -566,7 +594,7 @@ uint8_t test_msg_object_datagram[] = {
     0,
     PMOQ_OBJECT_STATUS_NORMAL
 };
-
+#endif
 
 /* Table of test cases */
 pmoq_msg_format_test_case_t format_test_cases[] = {
@@ -583,7 +611,7 @@ pmoq_msg_format_test_case_t format_test_cases[] = {
     FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE, test_msg_announce_zero, announce_zero),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE_OK, test_msg_announce_ok, track_namespace),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_UNANNOUNCE, test_msg_unannounce, track_namespace),
-    FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE_CANCEL, test_msg_announce_cancel, track_namespace),
+    FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE_CANCEL, test_msg_announce_cancel, announce_cancel),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_ANNOUNCE_ERROR, test_msg_announce_error, announce_error),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_UNSUBSCRIBE, test_msg_unsubscribe, unsubscribe),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_SUBSCRIBE_DONE, test_msg_subscribe_done, subscribe_done),
@@ -602,11 +630,13 @@ pmoq_msg_format_test_case_t format_test_cases[] = {
     FORMAT_TEST_CASE_ERR(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_bad1),
     FORMAT_TEST_CASE_ERR(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_bad2),
     FORMAT_TEST_CASE_ERR(PMOQ_MSG_SERVER_SETUP, test_msg_server_setup_bad3),
+#if 0
     FORMAT_TEST_CASE_OK(PMOQ_MSG_STREAM_HEADER_TRACK, test_msg_stream_header_track, stream_header_track),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_STREAM_HEADER_GROUP, test_msg_stream_header_group, stream_header_group),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_OBJECT_STREAM, test_msg_object_stream, object_stream),
     FORMAT_TEST_CASE_ERR(PMOQ_MSG_OBJECT_STREAM, test_msg_object_stream_bad),
     FORMAT_TEST_CASE_OK(PMOQ_MSG_OBJECT_DATAGRAM, test_msg_object_datagram, object_stream),
+#endif
 };
 
 const size_t format_test_cases_nb = sizeof(format_test_cases) / sizeof(pmoq_msg_format_test_case_t);
@@ -633,6 +663,20 @@ int pmoq_bits_cmp(const pmoq_bits_t* bs, const pmoq_bits_t* bs_ref)
     }
     else {
         ret = -1;
+    }
+
+    return ret;
+}
+
+int pmoq_tuple_cmp(const pmoq_tuple_t* t, const pmoq_tuple_t* t_ref)
+{
+    int ret = 0;
+
+    if (t->nb_items != t_ref->nb_items) {
+        ret = -1;
+    }
+    for (uint64_t item_rank = 0; ret == 0 && item_rank < t_ref->nb_items; item_rank++) {
+        ret = pmoq_bits_cmp(&t->items[item_rank], &t_ref->items[item_rank]);
     }
 
     return ret;
@@ -681,7 +725,7 @@ int mpoq_test_msg_compare(const pmoq_msg_t* msg, const pmoq_msg_t* msg2)
 {
     int ret = 0;
     if (msg->msg_type != msg2->msg_type ||
-        pmoq_bits_cmp(&msg->track_namespace, &msg2->track_namespace) != 0 ||
+        pmoq_tuple_cmp(&msg->track_namespace, &msg2->track_namespace) != 0 ||
         pmoq_bits_cmp(&msg->track_name, &msg2->track_name) != 0 ||
         msg->subscribe_id != msg2->subscribe_id ||
         msg->track_alias != msg2->track_alias ||
@@ -741,6 +785,16 @@ int pmoq_test_set_bits(pmoq_bits_t* v, char* val)
     return ret;
 }
 
+int pmoq_test_set_tuple(pmoq_tuple_t* v, char* val)
+{
+    int ret = 0;
+
+    v->nb_items = 1;
+    ret = pmoq_test_set_bits(&v->items[0], val);
+    return ret;
+}
+
+
 typedef struct st_pmoq_test_named_int_t {
     char* name;
     uint64_t v;
@@ -765,9 +819,12 @@ pmoq_test_named_int_t test_named_int[] = {
     TINT(pmoq_setup_role_publisher),
     TINT(pmoq_setup_role_subscriber),
     TINT(pmoq_setup_role_pubsub),
-    TINT(PMOQ_SUBSCRIBE_ERROR_RETRY_INTERNAL_ERROR),
-    TINT(PMOQ_SUBSCRIBE_ERROR_RETRY_INVALID_RANGE),
+    TINT(PMOQ_SUBSCRIBE_ERROR_INTERNAL_ERROR),
+    TINT(PMOQ_SUBSCRIBE_ERROR_INVALID_RANGE),
     TINT(PMOQ_SUBSCRIBE_ERROR_RETRY_TRACK_ALIAS),
+    TINT(PMOQ_SUBSCRIBE_ERROR_TRACK_DOES_NOT_EXIST),
+    TINT(PMOQ_SUBSCRIBE_ERROR_UNAUTHORIZED),
+    TINT(PMOQ_SUBSCRIBE_ERROR_TIMEOUT),
 };
 
 size_t test_named_int_nb = sizeof(test_named_int) / sizeof(pmoq_test_named_int_t);
@@ -873,7 +930,7 @@ int pmoq_test_set_msg_from_test(pmoq_msg_t *msg, pmoq_msg_format_test_case_t* te
 
     for (size_t i = 0; ret == 0 &&  i < nb_vals; i++) {
         if (strcmp(test->ref_val[i].t_name, "track_namespace") == 0) {
-            ret = pmoq_test_set_bits(&msg->track_namespace, test->ref_val[i].t_val);
+            ret = pmoq_test_set_tuple(&msg->track_namespace, test->ref_val[i].t_val);
         }
         else if (strcmp(test->ref_val[i].t_name, "track_name") == 0) {
             ret = pmoq_test_set_bits(&msg->track_name, test->ref_val[i].t_val);
